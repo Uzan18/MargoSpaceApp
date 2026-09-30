@@ -22,8 +22,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,7 +37,8 @@ import com.pemmob.margocoffe.ui.components.CoffeeMenuCard
 import com.pemmob.margocoffe.viewmodel.AppViewModel
 import com.pemmob.margocoffe.viewmodel.UiState
 
-@OptIn(ExperimentalMaterial3Api::class)
+data class PromoItem(val imageUrl: String, val badge: String, val title: String)
+
 @Composable
 fun HomeScreen(
     viewModel: AppViewModel,
@@ -44,64 +49,6 @@ fun HomeScreen(
     val cartCount = viewModel.getCartItemCount()
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Logo box
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.primary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.LocalCafe,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "Kopi Royal",
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 18.sp
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* TODO: Notifications */ }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Notifications,
-                            contentDescription = "Notifikasi",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    IconButton(onClick = { /* TODO: Profile */ }) {
-                        Box(
-                            modifier = Modifier
-                                .size(28.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Profil",
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        },
         bottomBar = {
             NavigationBar(
                 containerColor = Color.White,
@@ -150,14 +97,15 @@ fun HomeScreen(
                 )
             }
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                .padding(bottom = paddingValues.calculateBottomPadding()),
+            contentPadding = PaddingValues(bottom = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -179,6 +127,7 @@ fun HomeScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
                         .padding(top = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
@@ -228,7 +177,10 @@ fun HomeScreen(
                 }
                 is UiState.Error -> {
                     item(span = { GridItemSpan(2) }) {
-                        Text("Gagal memuat menu: ${coffeeState.message}")
+                        Text(
+                            text = "Gagal memuat menu: ${coffeeState.message}",
+                            modifier = Modifier.padding(horizontal = 20.dp)
+                        )
                     }
                 }
                 is UiState.Success -> {
@@ -236,66 +188,170 @@ fun HomeScreen(
                         CoffeeMenuCard(
                             coffee = coffee,
                             onClick = { onCoffeeClick(coffee.id) },
-                            onAddClick = { onCoffeeClick(coffee.id) }
+                            onAddClick = { onCoffeeClick(coffee.id) },
+                            modifier = Modifier.padding(
+                                start = if (coffeeState.data.indexOf(coffee) % 2 == 0) 20.dp else 0.dp,
+                                end = if (coffeeState.data.indexOf(coffee) % 2 == 1) 20.dp else 0.dp
+                            )
                         )
                     }
                 }
             }
-
-            item(span = { GridItemSpan(2) }) { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }
 
 @Composable
 private fun PromoAndGreetingSection(userName: String, loyaltyPoints: Int) {
+    val promos = listOf(
+        PromoItem("https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80", "Edisi Khusus", "Bingkisan Spesial & Menu Musim Dingin"),
+        PromoItem("https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=800&q=80", "Promo Baru", "Nikmati Kopi Arabica Pilihan Terbaik"),
+        PromoItem("https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=80", "Diskon 50%", "Beli 1 Gratis 1 Khusus Hari Jumat")
+    )
+    
+    // Setup for true infinite scrolling (always slides right)
+    val pageCount = Int.MAX_VALUE
+    val startIndex = pageCount / 2 - (pageCount / 2 % promos.size)
+    val pagerState = rememberPagerState(
+        initialPage = startIndex,
+        pageCount = { pageCount }
+    )
+
+    // Auto-scroll effect (fixed)
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(4000)
+            if (!pagerState.isScrollInProgress) {
+                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+            }
+        }
+    }
+
     Box(
         modifier = Modifier.fillMaxWidth()
     ) {
-        // Top layer: Promo Image
+        // Top layer: Promo Image (edge to edge with Pager)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
-                .padding(bottom = 40.dp)
-                .clip(RoundedCornerShape(16.dp)),
+                .padding(bottom = 60.dp) // Space for the card to overlap at the bottom
+                .height(300.dp), // Taller to cover behind status bar
             contentAlignment = Alignment.BottomStart
         ) {
-            // Promo Image using Coil
-            coil.compose.AsyncImage(
-                model = "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80",
-                contentDescription = "Promo Image",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop
-            )
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                val actualPage = page % promos.size
+                val promo = promos[actualPage]
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // Promo Image using Coil
+                    coil.compose.AsyncImage(
+                        model = promo.imageUrl,
+                        contentDescription = promo.title,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    
+                    // Dark overlay for text readability, blending into top
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.3f))
+                    )
+
+                    // Promotional Text
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(20.dp)
+                            .padding(bottom = 80.dp) // Adjusted slightly higher
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .background(Color.White, RoundedCornerShape(16.dp))
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = promo.badge,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = promo.title,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                }
+            }
             
-            // Dark overlay for text readability
-            Box(
+            // Top Icons (floating)
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.4f))
-            )
-            // Placeholder for promo image content
-            Column(modifier = Modifier.padding(16.dp)) {
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(top = 16.dp, end = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Notification Icon
                 Box(
                     modifier = Modifier
-                        .background(Color.White, RoundedCornerShape(12.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.4f)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Edisi Khusus",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                    Icon(
+                        imageVector = Icons.Outlined.Notifications,
+                        contentDescription = "Notifikasi",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Bingkisan Spesial & Menu Musim Dingin",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                
+                // Profile Icon
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.4f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profil",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            // Pager Indicator Dots
+            Row(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 50.dp), // Pushed up slightly
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val currentActualPage = pagerState.currentPage % promos.size
+                repeat(promos.size) { iteration ->
+                    val isActive = currentActualPage == iteration
+                    val color = if (isActive) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.6f)
+                    val size = if (isActive) 10.dp else 8.dp
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .clip(CircleShape)
+                            .background(color)
+                            .size(size)
+                    )
+                }
             }
         }
 
@@ -303,60 +359,25 @@ private fun PromoAndGreetingSection(userName: String, loyaltyPoints: Int) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(horizontal = 20.dp)
                 .align(Alignment.BottomCenter)
-                .offset(y = 10.dp)
                 .zIndex(1f),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(20.dp)) {
                 // User row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha=0.4f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("👋", fontSize = 20.sp)
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "Hai $userName!",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Awali harimu dengan seduhan istimewa",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 11.sp
-                            )
-                        }
-                    }
-                    
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha=0.5f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(14.dp)
-                        )
-                    }
+                    Text(
+                        text = "Hai $userName!",
+                        style = MaterialTheme.typography.headlineSmall, // Bigger text
+                        fontWeight = FontWeight.ExtraBold
+                    )
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -438,26 +459,27 @@ private fun CategoryRow() {
     val categories = listOf("Semua Kopi", "Espresso", "Non-Kopi")
     
     LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(top = 16.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.padding(top = 16.dp),
+        contentPadding = PaddingValues(horizontal = 20.dp)
     ) {
         items(categories) { category ->
             val isSelected = category == "Semua Kopi"
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(24.dp))
                     .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.White)
                     .border(
                         width = 1.dp,
                         color = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant,
-                        shape = RoundedCornerShape(20.dp)
+                        shape = RoundedCornerShape(24.dp)
                     )
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
             ) {
                 Text(
                     text = category,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
                     color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
                 )
             }
