@@ -185,6 +185,34 @@ class AppViewModel : ViewModel() {
         }
     }
 
+    fun addMenuItemToCart(coffee: Coffee) {
+        val newItem = CartItem(
+            coffee = coffee,
+            quantity = 1,
+            selectedSize = MockRepository.sizeOptions.first(),
+            selectedIceLevel = MockRepository.iceLevelOptions.first(),
+            selectedSweetness = MockRepository.sweetnessOptions.first()
+        )
+
+        _checkoutState.update { current ->
+            val existingIndex = current.cartItems.indexOfFirst {
+                it.coffee.id == coffee.id &&
+                    it.selectedSize == newItem.selectedSize &&
+                    it.selectedIceLevel == newItem.selectedIceLevel &&
+                    it.selectedSweetness == newItem.selectedSweetness
+            }
+
+            if (existingIndex >= 0) {
+                val updatedItems = current.cartItems.toMutableList()
+                val existing = updatedItems[existingIndex]
+                updatedItems[existingIndex] = existing.copy(quantity = existing.quantity + 1)
+                current.copy(cartItems = updatedItems)
+            } else {
+                current.copy(cartItems = current.cartItems + newItem)
+            }
+        }
+    }
+
     fun removeFromCart(index: Int) {
         _checkoutState.update { current ->
             val updatedItems = current.cartItems.toMutableList()

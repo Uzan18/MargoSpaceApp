@@ -14,6 +14,7 @@ import com.pemmob.margocoffe.navigation.Screen
 import com.pemmob.margocoffe.ui.screens.CheckoutScreen
 import com.pemmob.margocoffe.ui.screens.DrinkDetailScreen
 import com.pemmob.margocoffe.ui.screens.HomeScreen
+import com.pemmob.margocoffe.ui.screens.MenuScreen
 import com.pemmob.margocoffe.ui.screens.OrderStatusScreen
 import com.pemmob.margocoffe.ui.theme.KopiRoyalTheme
 import com.pemmob.margocoffe.viewmodel.AppViewModel
@@ -43,6 +44,24 @@ fun KopiRoyalApp() {
         composable<Screen.Home> {
             HomeScreen(
                 viewModel = viewModel,
+                onCoffeeClick = { coffeeId ->
+                    navController.navigate(Screen.Detail(coffeeId = coffeeId))
+                },
+                onMenuClick = {
+                    navController.navigate(Screen.Menu) { launchSingleTop = true }
+                },
+                onCartClick = {
+                    navController.navigate(Screen.Checkout)
+                }
+            )
+        }
+
+        composable<Screen.Menu> {
+            MenuScreen(
+                viewModel = viewModel,
+                onHomeClick = {
+                    navController.navigate(Screen.Home) { launchSingleTop = true }
+                },
                 onCoffeeClick = { coffeeId ->
                     navController.navigate(Screen.Detail(coffeeId = coffeeId))
                 },

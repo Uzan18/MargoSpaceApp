@@ -38,6 +38,7 @@ import com.pemmob.margocoffe.viewmodel.UiState
 fun HomeScreen(
     viewModel: AppViewModel,
     onCoffeeClick: (Int) -> Unit,
+    onMenuClick: () -> Unit,
     onCartClick: () -> Unit
 ) {
     val homeState by viewModel.homeState.collectAsState()
@@ -120,7 +121,7 @@ fun HomeScreen(
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = { },
+                    onClick = onMenuClick,
                     icon = { Icon(Icons.Outlined.LocalCafe, contentDescription = "Menu") },
                     label = { Text("Menu") }
                 )
