@@ -78,7 +78,7 @@ fun KopiRoyalApp() {
                 coffeeId = detail.coffeeId,
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
-                onAddToCart = { navController.popBackStack() }
+                onAddToCart = { navController.navigate(Screen.Checkout) }
             )
         }
 

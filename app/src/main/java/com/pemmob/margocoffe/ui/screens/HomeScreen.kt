@@ -19,6 +19,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,6 +38,7 @@ import com.pemmob.margocoffe.data.Coffee
 import com.pemmob.margocoffe.ui.components.CoffeeMenuCard
 import com.pemmob.margocoffe.viewmodel.AppViewModel
 import com.pemmob.margocoffe.viewmodel.UiState
+import kotlinx.coroutines.launch
 
 data class PromoItem(val imageUrl: String, val badge: String, val title: String)
 
@@ -47,9 +50,13 @@ fun HomeScreen(
     onCartClick: () -> Unit
 ) {
     val homeState by viewModel.homeState.collectAsState()
-    val cartCount = viewModel.getCartItemCount()
+    val checkoutState by viewModel.checkoutState.collectAsState()
+    val cartCount = checkoutState.cartItems.sumOf { it.quantity }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
             NavigationBar(
                 containerColor = Color.White,
@@ -189,7 +196,18 @@ fun HomeScreen(
                         CoffeeMenuCard(
                             coffee = coffee,
                             onClick = { onCoffeeClick(coffee.id) },
-                            onAddClick = { onCoffeeClick(coffee.id) },
+                            onAddClick = {
+                                viewModel.addMenuItemToCart(coffee)
+                                coroutineScope.launch {
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "${coffee.name} ditambahkan ke keranjang",
+                                        actionLabel = "Lihat keranjang",
+                                        withDismissAction = true,
+                                        duration = SnackbarDuration.Long
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) onCartClick()
+                                }
+                            },
                             modifier = Modifier.padding(
                                 start = if (coffeeState.data.indexOf(coffee) % 2 == 0) 20.dp else 0.dp,
                                 end = if (coffeeState.data.indexOf(coffee) % 2 == 1) 20.dp else 0.dp

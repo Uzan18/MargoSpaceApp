@@ -61,7 +61,8 @@ object MockRepository {
             imageDescription = "Es Kopi Susu Aren",
             category = "Kopi Susu",
             isBestSeller = true,
-            description = "Perpaduan kopi robusta pilihan dengan susu segar dan gula aren asli. Rasa manis alami yang bikin nagih!"
+            description = "Perpaduan kopi robusta pilihan dengan susu segar dan gula aren asli. Rasa manis alami yang bikin nagih!",
+            imageUrl = "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=700&q=85"
         ),
         Coffee(
             id = 2,
@@ -70,7 +71,8 @@ object MockRepository {
             imageDescription = "Americano",
             category = "Kopi Hitam",
             isBestSeller = false,
-            description = "Espresso shot yang diencerkan dengan air panas. Cocok untuk penikmat kopi sejati."
+            description = "Espresso shot yang diencerkan dengan air panas. Cocok untuk penikmat kopi sejati.",
+            imageUrl = "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=700&q=85"
         ),
         Coffee(
             id = 3,
@@ -79,7 +81,8 @@ object MockRepository {
             imageDescription = "Cappuccino",
             category = "Kopi Susu",
             isBestSeller = true,
-            description = "Espresso dengan steamed milk dan foam yang lembut. Klasik dan selalu enak."
+            description = "Espresso dengan steamed milk dan foam yang lembut. Klasik dan selalu enak.",
+            imageUrl = "https://images.unsplash.com/photo-1534778101976-62847782c213?auto=format&fit=crop&w=700&q=85"
         ),
         Coffee(
             id = 4,
@@ -88,7 +91,8 @@ object MockRepository {
             imageDescription = "Matcha Latte",
             category = "Non-Kopi",
             isBestSeller = false,
-            description = "Matcha premium dari Jepang dicampur susu segar. Creamy dan menyegarkan."
+            description = "Matcha premium dari Jepang dicampur susu segar. Creamy dan menyegarkan.",
+            imageUrl = "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=700&q=85"
         ),
         Coffee(
             id = 5,
@@ -97,7 +101,8 @@ object MockRepository {
             imageDescription = "Es Coklat",
             category = "Non-Kopi",
             isBestSeller = true,
-            description = "Coklat Belgium premium dengan susu segar. Manisnya pas, coklatnya nendang!"
+            description = "Coklat Belgium premium dengan susu segar. Manisnya pas, coklatnya nendang!",
+            imageUrl = "https://images.unsplash.com/photo-1542990253-0b8be7ec9cbe?auto=format&fit=crop&w=700&q=85"
         ),
         Coffee(
             id = 6,
@@ -106,7 +111,8 @@ object MockRepository {
             imageDescription = "Caramel Macchiato",
             category = "Kopi Susu",
             isBestSeller = false,
-            description = "Espresso dengan susu dan drizzle caramel. Manis, creamy, dan aromatic."
+            description = "Espresso dengan susu dan drizzle caramel. Manis, creamy, dan aromatic.",
+            imageUrl = "https://images.unsplash.com/photo-1485808191679-5f86510681a2?auto=format&fit=crop&w=700&q=85"
         ),
         Coffee(
             id = 7,
@@ -115,7 +121,8 @@ object MockRepository {
             imageDescription = "Es Teh Lemon",
             category = "Non-Kopi",
             isBestSeller = false,
-            description = "Teh hitam segar dengan perasan lemon asli. Segar dan menyejukkan."
+            description = "Teh hitam segar dengan perasan lemon asli. Segar dan menyejukkan.",
+            imageUrl = "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=700&q=85"
         ),
         Coffee(
             id = 8,
@@ -124,7 +131,8 @@ object MockRepository {
             imageDescription = "Kopi Susu Royal",
             category = "Kopi Susu",
             isBestSeller = true,
-            description = "Signature drink Kopi Royal! Espresso, susu, brown sugar, dan secret spice."
+            description = "Signature drink Kopi Royal! Espresso, susu, brown sugar, dan secret spice.",
+            imageUrl = "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=700&q=85"
         )
     )
 

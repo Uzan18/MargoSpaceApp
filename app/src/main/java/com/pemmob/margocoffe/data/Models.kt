@@ -16,7 +16,8 @@ data class Coffee(
     val imageDescription: String, // Placeholder description for the image
     val category: String,
     val isBestSeller: Boolean = false,
-    val description: String = ""
+    val description: String = "",
+    val imageUrl: String = ""
 )
 
 /**

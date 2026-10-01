@@ -3,6 +3,7 @@ package com.pemmob.margocoffe.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -37,6 +39,11 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -45,6 +52,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +68,7 @@ import com.pemmob.margocoffe.data.Coffee
 import com.pemmob.margocoffe.data.MockRepository
 import com.pemmob.margocoffe.ui.components.formatRupiah
 import com.pemmob.margocoffe.viewmodel.AppViewModel
+import kotlinx.coroutines.launch
 
 private data class MenuProduct(
     val item: Coffee,
@@ -88,7 +97,22 @@ fun MenuScreen(
     onCoffeeClick: (Int) -> Unit,
     onCartClick: () -> Unit
 ) {
-    val cartCount = viewModel.getCartItemCount()
+    val checkoutState by viewModel.checkoutState.collectAsState()
+    val cartCount = checkoutState.cartItems.sumOf { it.quantity }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val addProductToCart: (Coffee) -> Unit = { coffee ->
+        viewModel.addMenuItemToCart(coffee)
+        coroutineScope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = "${coffee.name} ditambahkan ke keranjang",
+                actionLabel = "Lihat keranjang",
+                withDismissAction = true,
+                duration = SnackbarDuration.Long
+            )
+            if (result == SnackbarResult.ActionPerformed) onCartClick()
+        }
+    }
     var selectedSection by remember { mutableStateOf("Semua") }
     var searchQuery by remember { mutableStateOf("") }
     val sections = listOf("Semua", "Minuman", "Makanan", "Snack")
@@ -98,6 +122,7 @@ fun MenuScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -110,35 +135,71 @@ fun MenuScreen(
             )
         },
         bottomBar = {
-            NavigationBar(containerColor = Color.White) {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onHomeClick,
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Beranda") },
-                    label = { Text("Beranda") }
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = { },
-                    icon = { Icon(Icons.Outlined.LocalCafe, contentDescription = "Menu") },
-                    label = { Text("Menu") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onCartClick,
-                    icon = {
-                        BadgedBox(badge = { if (cartCount > 0) Badge { Text("$cartCount") } }) {
-                            Icon(Icons.Outlined.ShoppingCart, contentDescription = "Keranjang")
+            Column {
+                if (checkoutState.cartItems.isNotEmpty()) {
+                    Surface(
+                        color = Color.White,
+                        shadowElevation = 4.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = checkoutState.cartItems.joinToString(" · ") {
+                                        "${it.coffee.name} x${it.quantity}"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = formatRupiah(checkoutState.cartItems.sumOf { it.totalPrice }),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Button(onClick = onCartClick) {
+                                Text("Lihat keranjang")
+                            }
                         }
-                    },
-                    label = { Text("Keranjang") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { },
-                    icon = { Icon(Icons.Outlined.Restaurant, contentDescription = "Pesanan") },
-                    label = { Text("Pesanan") }
-                )
+                    }
+                }
+                NavigationBar(containerColor = Color.White) {
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = onHomeClick,
+                        icon = { Icon(Icons.Default.Home, contentDescription = "Beranda") },
+                        label = { Text("Beranda") }
+                    )
+                    NavigationBarItem(
+                        selected = true,
+                        onClick = { },
+                        icon = { Icon(Icons.Outlined.LocalCafe, contentDescription = "Menu") },
+                        label = { Text("Menu") }
+                    )
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = onCartClick,
+                        icon = {
+                            BadgedBox(badge = { if (cartCount > 0) Badge { Text("$cartCount") } }) {
+                                Icon(Icons.Outlined.ShoppingCart, contentDescription = "Keranjang")
+                            }
+                        },
+                        label = { Text("Keranjang") }
+                    )
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = { },
+                        icon = { Icon(Icons.Outlined.Restaurant, contentDescription = "Pesanan") },
+                        label = { Text("Pesanan") }
+                    )
+                }
             }
         }
     ) { paddingValues ->
@@ -193,9 +254,9 @@ fun MenuScreen(
                         product = product,
                         onClick = {
                             if (product.section == "Minuman") onCoffeeClick(product.item.id)
-                            else viewModel.addMenuItemToCart(product.item)
+                            else addProductToCart(product.item)
                         },
-                        onAddClick = { viewModel.addMenuItemToCart(product.item) }
+                        onAddClick = { addProductToCart(product.item) }
                     )
                 }
             }
@@ -255,12 +316,13 @@ private fun MenuProductCard(
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     )
-                    IconButton(
-                        onClick = onAddClick,
+                    Box(
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(36.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary)
+                            .clickable(onClick = onAddClick),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             Icons.Default.Add,

@@ -67,7 +67,7 @@ fun CoffeeMenuCard(
             ) {
                 // Dummy image from Unsplash
                 coil.compose.AsyncImage(
-                    model = "https://images.unsplash.com/photo-1559525839-b184a4d698c7?auto=format&fit=crop&w=400&q=80",
+                    model = coffee.imageUrl,
                     contentDescription = coffee.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = androidx.compose.ui.layout.ContentScale.Crop
@@ -145,7 +145,7 @@ fun CoffeeMenuCard(
                     // Add button
                     Box(
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(36.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary)
                             .clickable(onClick = onAddClick),
@@ -155,7 +155,7 @@ fun CoffeeMenuCard(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Tambah",
                             tint = Color.White,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
