@@ -20,5 +20,8 @@ sealed class Screen {
     data object Checkout : Screen()
 
     @Serializable
+    data object Rewards : Screen()
+
+    @Serializable
     data object OrderStatus : Screen()
 }

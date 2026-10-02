@@ -1,5 +1,7 @@
 package com.pemmob.margocoffe.data
 
+import com.pemmob.margocoffe.R
+
 /**
  * Mock Repository providing dummy data for the Kopi Royal app.
  *
@@ -41,7 +43,7 @@ object MockRepository {
         PromoBanner(
             id = 2,
             title = "Beli 2 Gratis 1",
-            subtitle = "Promo spesial akhir pekan di Kopi Royal",
+            subtitle = "Promo spesial akhir pekan di Margo Space",
             backgroundColor = 0xFF6A1B9A
         ),
         PromoBanner(
@@ -52,87 +54,127 @@ object MockRepository {
         )
     )
 
-    // ─── Coffee Menu ────────────────────────────────────────────────
+    // ─── Coffee Menu (Margo Space Official Menu) ───────────────────
     val coffeeMenu = listOf(
         Coffee(
             id = 1,
-            name = "Es Kopi Susu Aren",
-            price = 20000,
-            imageDescription = "Es Kopi Susu Aren",
-            category = "Kopi Susu",
+            name = "Marko",
+            price = 17000,
+            imageDescription = "Signature iced coffee blend Margo Space creamy",
+            category = "Coffee",
             isBestSeller = true,
-            description = "Perpaduan kopi robusta pilihan dengan susu segar dan gula aren asli. Rasa manis alami yang bikin nagih!",
-            imageUrl = "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=700&q=85"
+            badge = "Signature",
+            description = "Signature blend kopi Margo Space berpadu susu creamy istimewa",
+            imageUrl = "",
+            imageRes = R.drawable.marko
         ),
         Coffee(
             id = 2,
-            name = "Americano",
-            price = 18000,
-            imageDescription = "Americano",
-            category = "Kopi Hitam",
-            isBestSeller = false,
-            description = "Espresso shot yang diencerkan dengan air panas. Cocok untuk penikmat kopi sejati.",
-            imageUrl = "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=700&q=85"
+            name = "Salted Caramel",
+            price = 20000,
+            imageDescription = "Espresso based dengan salted caramel",
+            category = "Coffee",
+            isBestSeller = true,
+            badge = "Terlaris",
+            description = "Espresso based dengan sirup salted caramel gurih manis",
+            imageUrl = "",
+            imageRes = R.drawable.salted_caramel
         ),
         Coffee(
             id = 3,
-            name = "Cappuccino",
-            price = 24000,
-            imageDescription = "Cappuccino",
-            category = "Kopi Susu",
-            isBestSeller = true,
-            description = "Espresso dengan steamed milk dan foam yang lembut. Klasik dan selalu enak.",
-            imageUrl = "https://images.unsplash.com/photo-1534778101976-62847782c213?auto=format&fit=crop&w=700&q=85"
+            name = "Butterscotch",
+            price = 20000,
+            imageDescription = "Espresso based dengan aroma butterscotch kaya",
+            category = "Coffee",
+            isBestSeller = false,
+            badge = "Favorit",
+            description = "Espresso kaya rasa dengan aroma mentega karamel butterscotch",
+            imageUrl = "",
+            imageRes = R.drawable.butterscotch
         ),
         Coffee(
             id = 4,
-            name = "Matcha Latte",
-            price = 26000,
-            imageDescription = "Matcha Latte",
-            category = "Non-Kopi",
-            isBestSeller = false,
-            description = "Matcha premium dari Jepang dicampur susu segar. Creamy dan menyegarkan.",
-            imageUrl = "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=700&q=85"
+            name = "Oats Margo",
+            price = 22000,
+            imageDescription = "Espresso dengan oatmilk pilihan khas Margo",
+            category = "Coffee",
+            isBestSeller = true,
+            badge = "Rekomendasi",
+            description = "Espresso nikmat berpadu creamy oatmilk premium khas Margo",
+            imageUrl = "",
+            imageRes = R.drawable.oats_margo
         ),
         Coffee(
             id = 5,
-            name = "Es Coklat",
-            price = 22000,
-            imageDescription = "Es Coklat",
-            category = "Non-Kopi",
-            isBestSeller = true,
-            description = "Coklat Belgium premium dengan susu segar. Manisnya pas, coklatnya nendang!",
-            imageUrl = "https://images.unsplash.com/photo-1542990253-0b8be7ec9cbe?auto=format&fit=crop&w=700&q=85"
+            name = "Americano",
+            price = 15000,
+            imageDescription = "Espresso murni dingin segar",
+            category = "Coffee",
+            isBestSeller = false,
+            badge = "",
+            description = "Espresso shot murni segar dengan karakter rasa kopi bold",
+            imageUrl = "",
+            imageRes = R.drawable.americano
         ),
         Coffee(
             id = 6,
-            name = "Caramel Macchiato",
-            price = 28000,
-            imageDescription = "Caramel Macchiato",
-            category = "Kopi Susu",
+            name = "Chillberry",
+            price = 18000,
+            imageDescription = "Perpaduan kopi espresso dan buah berry dingin",
+            category = "Coffee",
             isBestSeller = false,
-            description = "Espresso dengan susu dan drizzle caramel. Manis, creamy, dan aromatic.",
-            imageUrl = "https://images.unsplash.com/photo-1485808191679-5f86510681a2?auto=format&fit=crop&w=700&q=85"
+            badge = "Spesial",
+            description = "Sensasi kopi espresso berpadu kesegaran buah berry manis dingin",
+            imageUrl = "",
+            imageRes = R.drawable.chillberry
         ),
         Coffee(
             id = 7,
-            name = "Es Teh Lemon",
-            price = 15000,
-            imageDescription = "Es Teh Lemon",
-            category = "Non-Kopi",
+            name = "Chocomargo",
+            price = 20000,
+            imageDescription = "Kombinasi coklat pekat dan espresso khas Margo",
+            category = "Coffee",
             isBestSeller = false,
-            description = "Teh hitam segar dengan perasan lemon asli. Segar dan menyejukkan.",
-            imageUrl = "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=700&q=85"
+            badge = "",
+            description = "Kombinasi mantap antara coklat pekat dan espresso khas Margo",
+            imageUrl = "",
+            imageRes = R.drawable.chocomargo
         ),
         Coffee(
-            id = 8,
-            name = "Kopi Susu Royal",
-            price = 25000,
-            imageDescription = "Kopi Susu Royal",
-            category = "Kopi Susu",
+            id = 9,
+            name = "Milo",
+            price = 15000,
+            imageDescription = "Coklat malt Milo dingin segar",
+            category = "Non-Coffee",
+            isBestSeller = false,
+            badge = "",
+            description = "Minuman coklat malt Milo dingin yang manis dan menyegarkan",
+            imageUrl = "",
+            imageRes = R.drawable.milo
+        ),
+        Coffee(
+            id = 10,
+            name = "Matcha",
+            price = 18000,
+            imageDescription = "Matcha hijau autentik dengan susu segar creamy",
+            category = "Non-Coffee",
             isBestSeller = true,
-            description = "Signature drink Kopi Royal! Espresso, susu, brown sugar, dan secret spice.",
-            imageUrl = "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=700&q=85"
+            badge = "Terlaris",
+            description = "Matcha hijau autentik berpadu susu segar dingin yang creamy",
+            imageUrl = "",
+            imageRes = R.drawable.matcha
+        ),
+        Coffee(
+            id = 11,
+            name = "Mango Yakult",
+            price = 18000,
+            imageDescription = "Sari mangga segar berpadu Yakult asam manis",
+            category = "Non-Coffee",
+            isBestSeller = true,
+            badge = "Favorit",
+            description = "Kesegaran sari mangga berpadu probiotik Yakult dingin asam manis",
+            imageUrl = "",
+            imageRes = R.drawable.mango_yakult
         )
     )
 
@@ -144,6 +186,32 @@ object MockRepository {
         // Simulate network delay
         kotlinx.coroutines.delay(800)
         return coffeeMenu
+    }
+
+    /**
+     * Gets the most popular items based on category.
+     * Takes top items from each category.
+     */
+    fun getPopularMenu(category: String = "Semua"): List<Coffee> {
+        val topCoffee = coffeeMenu.filter { it.category == "Coffee" && it.isBestSeller }
+        val topNonCoffee = coffeeMenu.filter { it.category == "Non-Coffee" && it.isBestSeller }
+
+        return when (category) {
+            "Coffee" -> topCoffee
+            "Non-Coffee" -> topNonCoffee
+            else -> topCoffee + topNonCoffee
+        }
+    }
+
+    /**
+     * Returns curated best choices for the home screen.
+     */
+    fun getHomeBestChoices(category: String = "Semua"): List<Coffee> {
+        return when (category) {
+            "Coffee" -> coffeeMenu.filter { it.category == "Coffee" }
+            "Non-Coffee" -> coffeeMenu.filter { it.category == "Non-Coffee" }
+            else -> coffeeMenu
+        }
     }
 
     /**
@@ -160,4 +228,30 @@ object MockRepository {
     fun getCoffeeById(id: Int): Coffee? {
         return coffeeMenu.find { it.id == id }
     }
+
+    /**
+     * Mock past completed orders for the Pesanan Saya screen.
+     */
+    val mockPastOrders = listOf(
+        PastOrder(
+            id = "ord-028",
+            orderNumber = "Pesanan #028",
+            date = "24 Des 2024, 15:30 WIB",
+            itemsSummary = "1x Marko, 1x Matcha",
+            totalPrice = 35000,
+            paymentMethod = "Lunas via QRIS",
+            imageUrl = "",
+            coffeeIdToReorder = 1
+        ),
+        PastOrder(
+            id = "ord-015",
+            orderNumber = "Pesanan #015",
+            date = "20 Des 2024, 09:15 WIB",
+            itemsSummary = "2x Salted Caramel",
+            totalPrice = 40000,
+            paymentMethod = "Lunas via Kasir",
+            imageUrl = "",
+            coffeeIdToReorder = 2
+        )
+    )
 }

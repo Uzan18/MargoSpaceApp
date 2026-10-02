@@ -1,106 +1,56 @@
 package com.pemmob.margocoffe.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.outlined.LocalCafe
-import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.ShoppingCart
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.pemmob.margocoffe.data.Coffee
 import com.pemmob.margocoffe.data.MockRepository
+import com.pemmob.margocoffe.ui.components.CoffeeMenuCard
+import com.pemmob.margocoffe.ui.components.PopularCoffeeCard
 import com.pemmob.margocoffe.ui.components.formatRupiah
 import com.pemmob.margocoffe.viewmodel.AppViewModel
 import kotlinx.coroutines.launch
 
-private data class MenuProduct(
-    val item: Coffee,
-    val section: String,
-    val imageUrl: String
-)
-
-private val menuProducts = listOf(
-    MenuProduct(MockRepository.coffeeMenu[0], "Minuman", "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=700&q=85"),
-    MenuProduct(MockRepository.coffeeMenu[2], "Minuman", "https://images.unsplash.com/photo-1534778101976-62847782c213?auto=format&fit=crop&w=700&q=85"),
-    MenuProduct(MockRepository.coffeeMenu[1], "Minuman", "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=700&q=85"),
-    MenuProduct(MockRepository.coffeeMenu[3], "Minuman", "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=700&q=85"),
-    MenuProduct(Coffee(101, "Chicken Croissant", 28000, "Chicken Croissant", "Makanan", description = "Croissant renyah dengan ayam dan sayuran segar."), "Makanan", "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=700&q=85"),
-    MenuProduct(Coffee(102, "Royal Club Sandwich", 32000, "Royal Club Sandwich", "Makanan", description = "Roti panggang berisi ayam, telur, dan sayuran."), "Makanan", "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=700&q=85"),
-    MenuProduct(Coffee(103, "Pasta Creamy", 35000, "Pasta Creamy", "Makanan", description = "Pasta creamy gurih dengan taburan keju."), "Makanan", "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=700&q=85"),
-    MenuProduct(Coffee(201, "Butter Croissant", 18000, "Butter Croissant", "Snack", description = "Pastry butter panggang, renyah di luar."), "Snack", "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=700&q=85"),
-    MenuProduct(Coffee(202, "Kentang Goreng", 20000, "Kentang Goreng", "Snack", description = "Kentang goreng hangat dengan saus pilihan."), "Snack", "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=700&q=85"),
-    MenuProduct(Coffee(203, "Chocolate Brownies", 22000, "Chocolate Brownies", "Snack", description = "Brownies cokelat lembut untuk teman kopi."), "Snack", "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=700&q=85")
-)
-
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuScreen(
     viewModel: AppViewModel,
     onHomeClick: () -> Unit,
     onCoffeeClick: (Int) -> Unit,
+    onRewardsClick: () -> Unit,
+    onOrdersClick: () -> Unit,
     onCartClick: () -> Unit
 ) {
     val checkoutState by viewModel.checkoutState.collectAsState()
     val cartCount = checkoutState.cartItems.sumOf { it.quantity }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+
     val addProductToCart: (Coffee) -> Unit = { coffee ->
         viewModel.addMenuItemToCart(coffee)
         coroutineScope.launch {
@@ -113,12 +63,22 @@ fun MenuScreen(
             if (result == SnackbarResult.ActionPerformed) onCartClick()
         }
     }
-    var selectedSection by remember { mutableStateOf("Semua") }
+
+    var selectedCategory by remember { mutableStateOf("Semua") }
     var searchQuery by remember { mutableStateOf("") }
-    val sections = listOf("Semua", "Minuman", "Makanan", "Snack")
-    val visibleProducts = menuProducts.filter { product ->
-        (selectedSection == "Semua" || product.section == selectedSection) &&
-            (searchQuery.isBlank() || product.item.name.contains(searchQuery, ignoreCase = true))
+    val categories = listOf("Semua", "Coffee", "Non-Coffee")
+
+    // Filter popular items based on selected category (2 best per category)
+    val popularDrinks = remember(selectedCategory) {
+        MockRepository.getPopularMenu(selectedCategory)
+    }
+
+    // Filter full menu based on category & search query
+    val visibleDrinks = remember(selectedCategory, searchQuery) {
+        MockRepository.coffeeMenu.filter { coffee ->
+            (selectedCategory == "Semua" || coffee.category.equals(selectedCategory, ignoreCase = true)) &&
+                    (searchQuery.isBlank() || coffee.name.contains(searchQuery, ignoreCase = true) || coffee.description.contains(searchQuery, ignoreCase = true))
+        }
     }
 
     Scaffold(
@@ -127,11 +87,21 @@ fun MenuScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Menu Kopi Royal", fontWeight = FontWeight.Bold)
-                        Text("Minuman, makanan, dan camilan", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            text = "Menu Margo Space",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        )
+                        Text(
+                            text = "Pilihan minuman kopi & non-kopi",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
             )
         },
         bottomBar = {
@@ -181,157 +151,195 @@ fun MenuScreen(
                         selected = true,
                         onClick = { },
                         icon = { Icon(Icons.Outlined.LocalCafe, contentDescription = "Menu") },
-                        label = { Text("Menu") }
+                        label = { Text("Menu") },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                        )
                     )
                     NavigationBarItem(
                         selected = false,
-                        onClick = onCartClick,
-                        icon = {
-                            BadgedBox(badge = { if (cartCount > 0) Badge { Text("$cartCount") } }) {
-                                Icon(Icons.Outlined.ShoppingCart, contentDescription = "Keranjang")
-                            }
-                        },
-                        label = { Text("Keranjang") }
+                        onClick = onRewardsClick,
+                        icon = { Icon(Icons.Outlined.Star, contentDescription = "Rewards") },
+                        label = { Text("Rewards") }
                     )
                     NavigationBarItem(
                         selected = false,
-                        onClick = { },
-                        icon = { Icon(Icons.Outlined.Restaurant, contentDescription = "Pesanan") },
+                        onClick = onOrdersClick,
+                        icon = { Icon(Icons.Outlined.Receipt, contentDescription = "Pesanan") },
                         label = { Text("Pesanan") }
                     )
                 }
             }
         }
     ) { paddingValues ->
-        Column(
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentPadding = PaddingValues(bottom = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Cari minuman, makanan, atau snack") },
-                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-                singleLine = true,
-                shape = RoundedCornerShape(14.dp)
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                sections.forEach { section ->
-                    FilterChip(
-                        selected = selectedSection == section,
-                        onClick = { selectedSection = section },
-                        label = { Text(section) }
+            // ─── Search Bar ─────────────────────────────────────────
+            item(span = { GridItemSpan(2) }) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 6.dp),
+                    placeholder = { Text("Cari minuman favoritmu...") },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Outlined.Search,
+                            contentDescription = "Cari",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     )
+                )
+            }
+
+            // ─── Category Chips ─────────────────────────────────────
+            item(span = { GridItemSpan(2) }) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                ) {
+                    items(categories) { category ->
+                        val isSelected = selectedCategory == category
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.White)
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant,
+                                    shape = RoundedCornerShape(24.dp)
+                                )
+                                .clickable { selectedCategory = category }
+                                .padding(horizontal = 20.dp, vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = category,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
                 }
             }
 
-            Text(
-                text = if (selectedSection == "Semua") "Pilihan untuk kamu" else selectedSection,
-                modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            // ─── Paling Populer (LazyRow) Section ───────────────────
+            if (searchQuery.isBlank() && popularDrinks.isNotEmpty()) {
+                item(span = { GridItemSpan(2) }) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        // Section Header
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                                .padding(top = 12.dp, bottom = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Paling Populer",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Pilihan terbaik barista kami hari ini",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(visibleProducts, key = { it.item.id }) { product ->
-                    MenuProductCard(
-                        product = product,
-                        onClick = {
-                            if (product.section == "Minuman") onCoffeeClick(product.item.id)
-                            else addProductToCart(product.item)
-                        },
-                        onAddClick = { addProductToCart(product.item) }
-                    )
+                            Text(
+                                text = "${popularDrinks.size} Rekomendasi",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        // Horizontal LazyRow of Popular Cards
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                            contentPadding = PaddingValues(horizontal = 20.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(popularDrinks, key = { "pop_${it.id}" }) { coffee ->
+                                PopularCoffeeCard(
+                                    coffee = coffee,
+                                    onClick = { onCoffeeClick(coffee.id) }
+                                )
+                            }
+                        }
+                    }
                 }
             }
-        }
-    }
-}
 
-@Composable
-private fun MenuProductCard(
-    product: MenuProduct,
-    onClick: () -> Unit,
-    onAddClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column {
-            AsyncImage(
-                model = product.imageUrl,
-                contentDescription = product.item.name,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1.18f)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentScale = ContentScale.Crop
-            )
-            Column(modifier = Modifier.padding(10.dp)) {
-                Text(
-                    text = product.item.name,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(3.dp))
-                Text(
-                    text = product.item.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    minLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+            // ─── Section Title for All / Filtered Menu ──────────────
+            item(span = { GridItemSpan(2) }) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(top = 16.dp, bottom = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        formatRupiah(product.item.price),
-                        color = MaterialTheme.colorScheme.primary,
+                        text = if (selectedCategory == "Semua") "Daftar Menu" else "Menu $selectedCategory",
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
+                        color = MaterialTheme.colorScheme.onSurface
                     )
+
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                            .clickable(onClick = onAddClick),
-                        contentAlignment = Alignment.Center
+                            .background(
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Tambah ${product.item.name} ke keranjang",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
+                        Text(
+                            text = "${visibleDrinks.size} menu",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
+            }
+
+            // ─── Menu Grid ──────────────────────────────────────────
+            items(visibleDrinks, key = { it.id }) { coffee ->
+                CoffeeMenuCard(
+                    coffee = coffee,
+                    onClick = { onCoffeeClick(coffee.id) },
+                    modifier = Modifier.padding(
+                        start = if (visibleDrinks.indexOf(coffee) % 2 == 0) 20.dp else 0.dp,
+                        end = if (visibleDrinks.indexOf(coffee) % 2 == 1) 20.dp else 0.dp
+                    )
+                )
             }
         }
     }

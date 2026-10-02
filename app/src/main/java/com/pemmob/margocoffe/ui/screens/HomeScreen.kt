@@ -19,8 +19,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,20 +35,31 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.zIndex
+import com.pemmob.margocoffe.R
 import com.pemmob.margocoffe.data.Coffee
 import com.pemmob.margocoffe.ui.components.CoffeeMenuCard
 import com.pemmob.margocoffe.viewmodel.AppViewModel
 import com.pemmob.margocoffe.viewmodel.UiState
 import kotlinx.coroutines.launch
 
-data class PromoItem(val imageUrl: String, val badge: String, val title: String)
+data class PromoItem(
+    val badge: String,
+    val title: String,
+    val subtitle: String,
+    val gradientColors: List<Color>
+)
 
 @Composable
 fun HomeScreen(
     viewModel: AppViewModel,
     onCoffeeClick: (Int) -> Unit,
     onMenuClick: () -> Unit,
+    onRewardsClick: () -> Unit,
+    onOrdersClick: () -> Unit,
     onCartClick: () -> Unit
 ) {
     val homeState by viewModel.homeState.collectAsState()
@@ -54,6 +67,7 @@ fun HomeScreen(
     val cartCount = checkoutState.cartItems.sumOf { it.quantity }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    var selectedCategory by remember { androidx.compose.runtime.mutableStateOf("Semua") }
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -81,25 +95,13 @@ fun HomeScreen(
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = onCartClick,
-                    icon = {
-                        BadgedBox(
-                            badge = {
-                                if (cartCount > 0) {
-                                    Badge(containerColor = MaterialTheme.colorScheme.error) {
-                                        Text("$cartCount")
-                                    }
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Outlined.ShoppingCart, contentDescription = "Keranjang")
-                        }
-                    },
-                    label = { Text("Keranjang") }
+                    onClick = onRewardsClick,
+                    icon = { Icon(Icons.Outlined.Star, contentDescription = "Rewards") },
+                    label = { Text("Rewards") }
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = { },
+                    onClick = onOrdersClick,
                     icon = { Icon(Icons.Outlined.Receipt, contentDescription = "Pesanan") },
                     label = { Text("Pesanan") }
                 )
@@ -108,6 +110,13 @@ fun HomeScreen(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
+        val displayedCoffees = remember(selectedCategory, homeState.coffeeList) {
+            when (homeState.coffeeList) {
+                is UiState.Success -> com.pemmob.margocoffe.data.MockRepository.getHomeBestChoices(selectedCategory)
+                else -> emptyList()
+            }
+        }
+
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             modifier = Modifier
@@ -121,13 +130,17 @@ fun HomeScreen(
             item(span = { GridItemSpan(2) }) {
                 PromoAndGreetingSection(
                     userName = homeState.userName,
-                    loyaltyPoints = homeState.loyaltyPoints
+                    loyaltyPoints = homeState.loyaltyPoints,
+                    onRewardsClick = onRewardsClick
                 )
             }
 
             // ─── Categories ─────────────────────────────────────────
             item(span = { GridItemSpan(2) }) {
-                CategoryRow()
+                CategoryRow(
+                    selectedCategory = selectedCategory,
+                    onSelectCategory = { selectedCategory = it }
+                )
             }
 
             // ─── Section Title ──────────────────────────────────────
@@ -154,7 +167,7 @@ fun HomeScreen(
                         )
                     }
                     
-                    // 8 menu badge
+                    // menu count badge
                     Box(
                         modifier = Modifier
                             .background(
@@ -164,7 +177,7 @@ fun HomeScreen(
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "8 menu",
+                            text = "${displayedCoffees.size} menu",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
@@ -192,25 +205,13 @@ fun HomeScreen(
                     }
                 }
                 is UiState.Success -> {
-                    gridItems(items = coffeeState.data, key = { it.id }) { coffee ->
+                    gridItems(items = displayedCoffees, key = { it.id }) { coffee ->
                         CoffeeMenuCard(
                             coffee = coffee,
                             onClick = { onCoffeeClick(coffee.id) },
-                            onAddClick = {
-                                viewModel.addMenuItemToCart(coffee)
-                                coroutineScope.launch {
-                                    val result = snackbarHostState.showSnackbar(
-                                        message = "${coffee.name} ditambahkan ke keranjang",
-                                        actionLabel = "Lihat keranjang",
-                                        withDismissAction = true,
-                                        duration = SnackbarDuration.Long
-                                    )
-                                    if (result == SnackbarResult.ActionPerformed) onCartClick()
-                                }
-                            },
                             modifier = Modifier.padding(
-                                start = if (coffeeState.data.indexOf(coffee) % 2 == 0) 20.dp else 0.dp,
-                                end = if (coffeeState.data.indexOf(coffee) % 2 == 1) 20.dp else 0.dp
+                                start = if (displayedCoffees.indexOf(coffee) % 2 == 0) 20.dp else 0.dp,
+                                end = if (displayedCoffees.indexOf(coffee) % 2 == 1) 20.dp else 0.dp
                             )
                         )
                     }
@@ -221,11 +222,30 @@ fun HomeScreen(
 }
 
 @Composable
-private fun PromoAndGreetingSection(userName: String, loyaltyPoints: Int) {
+private fun PromoAndGreetingSection(
+    userName: String,
+    loyaltyPoints: Int,
+    onRewardsClick: () -> Unit
+) {
     val promos = listOf(
-        PromoItem("https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80", "Edisi Khusus", "Bingkisan Spesial & Menu Musim Dingin"),
-        PromoItem("https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=800&q=80", "Promo Baru", "Nikmati Kopi Arabica Pilihan Terbaik"),
-        PromoItem("https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=80", "Diskon 50%", "Beli 1 Gratis 1 Khusus Hari Jumat")
+        PromoItem(
+            badge = "Edisi Khusus",
+            title = "Bingkisan Spesial & Menu Musim Dingin",
+            subtitle = "Nikmati racikan istimewa barista Margo Space",
+            gradientColors = listOf(Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF1E40AF))
+        ),
+        PromoItem(
+            badge = "Promo Baru",
+            title = "Nikmati Kopi Arabica Pilihan Terbaik",
+            subtitle = "Biji kopi single origin pilihan dari nusantara",
+            gradientColors = listOf(Color(0xFF172554), Color(0xFF1E3A8A), Color(0xFF2563EB))
+        ),
+        PromoItem(
+            badge = "Diskon 50%",
+            title = "Beli 1 Gratis 1 Khusus Hari Jumat",
+            subtitle = "Klaim promo di seluruh cabang Margo Space",
+            gradientColors = listOf(Color(0xFF0B192C), Color(0xFF1E3E62), Color(0xFF000000))
+        )
     )
     
     // Setup for true infinite scrolling (always slides right)
@@ -249,7 +269,7 @@ private fun PromoAndGreetingSection(userName: String, loyaltyPoints: Int) {
     Box(
         modifier = Modifier.fillMaxWidth()
     ) {
-        // Top layer: Promo Image (edge to edge with Pager)
+        // Top layer: Promo Gradient + Brand Logo
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -263,20 +283,25 @@ private fun PromoAndGreetingSection(userName: String, loyaltyPoints: Int) {
             ) { page ->
                 val actualPage = page % promos.size
                 val promo = promos[actualPage]
-                Box(modifier = Modifier.fillMaxSize()) {
-                    // Promo Image using Coil
-                    coil.compose.AsyncImage(
-                        model = promo.imageUrl,
-                        contentDescription = promo.title,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                    
-                    // Dark overlay for text readability, blending into top
-                    Box(
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                                colors = promo.gradientColors
+                            )
+                        )
+                ) {
+                    // Margo Space logo watermark (from user's added photo)
+                    Image(
+                        painter = painterResource(id = R.drawable.logomargo),
+                        contentDescription = null,
                         modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.3f))
+                            .size(190.dp)
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 8.dp)
+                            .graphicsLayer(alpha = 0.22f),
+                        contentScale = ContentScale.Fit
                     )
 
                     // Promotional Text
@@ -284,18 +309,19 @@ private fun PromoAndGreetingSection(userName: String, loyaltyPoints: Int) {
                         modifier = Modifier
                             .align(Alignment.BottomStart)
                             .padding(20.dp)
-                            .padding(bottom = 80.dp) // Adjusted slightly higher
+                            .padding(bottom = 80.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .background(Color.White, RoundedCornerShape(16.dp))
+                                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+                                .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                         ) {
                             Text(
                                 text = promo.badge,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                color = Color.White
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -305,49 +331,33 @@ private fun PromoAndGreetingSection(userName: String, loyaltyPoints: Int) {
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = promo.subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.85f)
+                        )
                     }
                 }
             }
             
-            // Top Icons (floating)
-            Row(
+            // Top Notification Icon (floating)
+            Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .statusBarsPadding()
-                    .padding(top = 16.dp, end = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(top = 16.dp, end = 20.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.4f)),
+                contentAlignment = Alignment.Center
             ) {
-                // Notification Icon
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.4f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Notifications,
-                        contentDescription = "Notifikasi",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                
-                // Profile Icon
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.4f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Profil",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Outlined.Notifications,
+                    contentDescription = "Notifikasi",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
             }
 
             // Pager Indicator Dots
@@ -386,7 +396,7 @@ private fun PromoAndGreetingSection(userName: String, loyaltyPoints: Int) {
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                // User row
+                // User row with Profile icon on the right
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -397,76 +407,58 @@ private fun PromoAndGreetingSection(userName: String, loyaltyPoints: Int) {
                         style = MaterialTheme.typography.headlineSmall, // Bigger text
                         fontWeight = FontWeight.ExtraBold
                     )
+
+                    // Profile Icon inside card
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+                            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profil",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
                 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
                 
-                // Action row (Points & Plan)
+                // Action row (Loyalty Points full-width)
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp))
+                        .clickable { onRewardsClick() }
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Poin
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp))
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "$loyaltyPoints Poin",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Text(
-                            text = "Tukar",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    
-                    // My Plan
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f), RoundedCornerShape(24.dp))
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Outlined.Map,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "My Plan",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.ArrowForward,
+                            imageVector = Icons.Default.Star,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "$loyaltyPoints Poin",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
                         )
                     }
+                    Text(
+                        text = "Tukar Poin",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
@@ -474,8 +466,11 @@ private fun PromoAndGreetingSection(userName: String, loyaltyPoints: Int) {
 }
 
 @Composable
-private fun CategoryRow() {
-    val categories = listOf("Semua Kopi", "Espresso", "Non-Kopi")
+private fun CategoryRow(
+    selectedCategory: String,
+    onSelectCategory: (String) -> Unit
+) {
+    val categories = listOf("Semua", "Coffee", "Non-Coffee")
     
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -483,7 +478,7 @@ private fun CategoryRow() {
         contentPadding = PaddingValues(horizontal = 20.dp)
     ) {
         items(categories) { category ->
-            val isSelected = category == "Semua Kopi"
+            val isSelected = category == selectedCategory
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(24.dp))
@@ -493,6 +488,7 @@ private fun CategoryRow() {
                         color = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant,
                         shape = RoundedCornerShape(24.dp)
                     )
+                    .clickable { onSelectCategory(category) }
                     .padding(horizontal = 24.dp, vertical = 12.dp)
             ) {
                 Text(

@@ -53,10 +53,20 @@ data class CheckoutUiState(
 
 // ─── Order Status State ─────────────────────────────────────────────
 data class OrderStatusUiState(
-    val orderNumber: String = "#042",
-    val customerName: String = "FAUZAN",
-    val statusMessage: String = "Kopi kamu sedang diracik!",
-    val statusSubtitle: String = "Silakan duduk santai. Barista kami akan memanggil namamu saat pesanan sudah siap."
+    val hasActiveOrder: Boolean = true,
+    val orderNumber: String = "Pesanan #042",
+    val tableNumber: String = "Meja 07",
+    val customerName: String = "Fauzan",
+    val branchName: String = "Cabang Margo Space",
+    val isDineIn: Boolean = true,
+    val items: List<CartItem> = emptyList(),
+    val totalAmount: Int = 52800,
+    val orderTime: String = "10:15 WIB",
+    val estimatedTime: String = "~5-8 menit",
+    val statusBadge: String = "Menunggu Dipanggil",
+    val statusMessage: String = "Pesanan Berhasil!",
+    val statusSubtitle: String = "Silakan tunggu nama atau nomor antrean Anda dipanggil di kasir.",
+    val pastOrders: List<PastOrder> = emptyList()
 )
 
 /**
@@ -86,6 +96,46 @@ class AppViewModel : ViewModel() {
 
     init {
         loadHomeData()
+        initDefaultOrderState()
+    }
+
+    private fun initDefaultOrderState() {
+        val coffee1 = MockRepository.getCoffeeById(1)
+        val coffee2 = MockRepository.getCoffeeById(4)
+        val demoItems = if (coffee1 != null && coffee2 != null) {
+            listOf(
+                CartItem(
+                    coffee = coffee1,
+                    quantity = 1,
+                    selectedSize = MockRepository.sizeOptions[0],
+                    selectedIceLevel = MockRepository.iceLevelOptions[0],
+                    selectedSweetness = MockRepository.sweetnessOptions[0]
+                ),
+                CartItem(
+                    coffee = coffee2.copy(name = "Velvet Cappuccino"),
+                    quantity = 1,
+                    selectedSize = MockRepository.sizeOptions[0],
+                    selectedIceLevel = MockRepository.iceLevelOptions[0],
+                    selectedSweetness = MockRepository.sweetnessOptions[0]
+                )
+            )
+        } else emptyList()
+
+        _orderStatusState.update {
+            it.copy(
+                hasActiveOrder = true,
+                orderNumber = "Pesanan #042",
+                tableNumber = "Meja 07",
+                customerName = "Fauzan",
+                branchName = "Cabang Margo Space",
+                items = demoItems,
+                totalAmount = 52800,
+                orderTime = "10:15 WIB",
+                estimatedTime = "~5-8 menit",
+                statusBadge = "Menunggu Dipanggil",
+                pastOrders = MockRepository.mockPastOrders
+            )
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -241,13 +291,33 @@ class AppViewModel : ViewModel() {
 
     fun placeOrder() {
         val checkout = _checkoutState.value
+        val currentTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date()) + " WIB"
+        val orderNo = (10..99).random().toString().padStart(2, '0')
         _orderStatusState.update {
             it.copy(
-                customerName = checkout.customerName.uppercase().ifEmpty { "FAUZAN" },
-                orderNumber = "#${(40..99).random().toString().padStart(3, '0')}"
+                hasActiveOrder = true,
+                orderNumber = "Pesanan #$orderNo",
+                customerName = checkout.customerName.ifEmpty { "Fauzan" },
+                isDineIn = checkout.isDineIn,
+                tableNumber = if (checkout.isDineIn) "Meja 07" else "Take Away",
+                branchName = "Cabang Margo Space",
+                items = checkout.cartItems,
+                totalAmount = checkout.total,
+                orderTime = currentTime,
+                estimatedTime = "~5-8 menit",
+                statusBadge = "Menunggu Dipanggil",
+                statusMessage = "Pesanan Berhasil!",
+                statusSubtitle = "Silakan tunggu nama atau nomor antrean Anda dipanggil di kasir."
             )
         }
+        // Reward 10 loyalty points for completing an order
+        _homeState.update { it.copy(loyaltyPoints = it.loyaltyPoints + 10) }
         // Clear cart after ordering
         _checkoutState.update { CheckoutUiState() }
+    }
+
+    fun reorderCoffee(coffeeId: Int) {
+        val coffee = MockRepository.getCoffeeById(coffeeId) ?: return
+        addMenuItemToCart(coffee)
     }
 }

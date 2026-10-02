@@ -16,8 +16,10 @@ data class Coffee(
     val imageDescription: String, // Placeholder description for the image
     val category: String,
     val isBestSeller: Boolean = false,
+    val badge: String = "",
     val description: String = "",
-    val imageUrl: String = ""
+    val imageUrl: String = "",
+    val imageRes: Int = 0
 )
 
 /**
@@ -64,4 +66,19 @@ data class PromoBanner(
     val title: String,
     val subtitle: String,
     val backgroundColor: Long // Color as ARGB long
+)
+
+/**
+ * Represents a past completed order for the order history tab.
+ */
+data class PastOrder(
+    val id: String,
+    val orderNumber: String,
+    val date: String,
+    val itemsSummary: String,
+    val totalPrice: Int,
+    val paymentMethod: String,
+    val imageUrl: String,
+    val status: String = "Selesai",
+    val coffeeIdToReorder: Int = 1
 )

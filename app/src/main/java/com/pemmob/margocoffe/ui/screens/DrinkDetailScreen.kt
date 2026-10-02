@@ -1,9 +1,12 @@
 package com.pemmob.margocoffe.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.painterResource
+import com.pemmob.margocoffe.R
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -77,25 +80,31 @@ fun DrinkDetailScreen(
                 shadowElevation = 8.dp,
                 color = Color.White
             ) {
-                Button(
-                    onClick = {
-                        viewModel.addToCart()
-                        onAddToCart()
-                    },
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .padding(16.dp)
-                        .height(52.dp),
-                    shape = RoundedCornerShape(26.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
                 ) {
-                    Text(
-                        text = "Tambah ke Keranjang — ${formatRupiah(detailState.totalPrice)}",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Button(
+                        onClick = {
+                            viewModel.addToCart()
+                            onAddToCart()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(26.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text(
+                            text = "Tambah ke Keranjang — ${formatRupiah(detailState.totalPrice)}",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         },
@@ -112,10 +121,33 @@ fun DrinkDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(240.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
+                    .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "☕", fontSize = 80.sp)
+                if (coffee.imageRes != 0) {
+                    Image(
+                        painter = painterResource(id = coffee.imageRes),
+                        contentDescription = coffee.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                    )
+                } else if (coffee.imageUrl.isNotBlank()) {
+                    coil.compose.AsyncImage(
+                        model = coffee.imageUrl,
+                        contentDescription = coffee.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.logomargo),
+                        contentDescription = coffee.name,
+                        modifier = Modifier
+                            .size(110.dp)
+                            .padding(8.dp),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                    )
+                }
             }
 
             // ─── Drink Info ─────────────────────────────────────────

@@ -59,26 +59,32 @@ fun CheckoutScreen(
                 shadowElevation = 8.dp,
                 color = Color.White
             ) {
-                Button(
-                    onClick = {
-                        viewModel.placeOrder()
-                        onProceedPayment()
-                    },
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .padding(16.dp)
-                        .height(52.dp),
-                    shape = RoundedCornerShape(26.dp),
-                    enabled = checkoutState.customerName.isNotBlank() && checkoutState.cartItems.isNotEmpty(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
                 ) {
-                    Text(
-                        text = "Lanjut Pembayaran",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Button(
+                        onClick = {
+                            viewModel.placeOrder()
+                            onProceedPayment()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(26.dp),
+                        enabled = checkoutState.customerName.isNotBlank() && checkoutState.cartItems.isNotEmpty(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text(
+                            text = "Bayar Sekarang",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         },

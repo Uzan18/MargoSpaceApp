@@ -16,6 +16,7 @@ import com.pemmob.margocoffe.ui.screens.DrinkDetailScreen
 import com.pemmob.margocoffe.ui.screens.HomeScreen
 import com.pemmob.margocoffe.ui.screens.MenuScreen
 import com.pemmob.margocoffe.ui.screens.OrderStatusScreen
+import com.pemmob.margocoffe.ui.screens.RewardsScreen
 import com.pemmob.margocoffe.ui.theme.KopiRoyalTheme
 import com.pemmob.margocoffe.viewmodel.AppViewModel
 
@@ -50,6 +51,12 @@ fun KopiRoyalApp() {
                 onMenuClick = {
                     navController.navigate(Screen.Menu) { launchSingleTop = true }
                 },
+                onRewardsClick = {
+                    navController.navigate(Screen.Rewards) { launchSingleTop = true }
+                },
+                onOrdersClick = {
+                    navController.navigate(Screen.OrderStatus) { launchSingleTop = true }
+                },
                 onCartClick = {
                     navController.navigate(Screen.Checkout)
                 }
@@ -65,8 +72,30 @@ fun KopiRoyalApp() {
                 onCoffeeClick = { coffeeId ->
                     navController.navigate(Screen.Detail(coffeeId = coffeeId))
                 },
+                onRewardsClick = {
+                    navController.navigate(Screen.Rewards) { launchSingleTop = true }
+                },
+                onOrdersClick = {
+                    navController.navigate(Screen.OrderStatus) { launchSingleTop = true }
+                },
                 onCartClick = {
                     navController.navigate(Screen.Checkout)
+                }
+            )
+        }
+
+        // ─── Rewards Screen ─────────────────────────────────────
+        composable<Screen.Rewards> {
+            RewardsScreen(
+                viewModel = viewModel,
+                onHomeClick = {
+                    navController.navigate(Screen.Home) { launchSingleTop = true }
+                },
+                onMenuClick = {
+                    navController.navigate(Screen.Menu) { launchSingleTop = true }
+                },
+                onOrdersClick = {
+                    navController.navigate(Screen.OrderStatus) { launchSingleTop = true }
                 }
             )
         }
@@ -78,7 +107,12 @@ fun KopiRoyalApp() {
                 coffeeId = detail.coffeeId,
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
-                onAddToCart = { navController.navigate(Screen.Checkout) }
+                onAddToCart = {
+                    navController.navigate(Screen.Menu) {
+                        popUpTo(Screen.Home) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
@@ -95,14 +129,18 @@ fun KopiRoyalApp() {
             )
         }
 
-        // ─── Order Status Screen ────────────────────────────────
+        // ─── Order Status Screen (Pesanan Saya) ─────────────────
         composable<Screen.OrderStatus> {
             OrderStatusScreen(
                 viewModel = viewModel,
-                onBackToHome = {
-                    navController.navigate(Screen.Home) {
-                        popUpTo(Screen.Home) { inclusive = true }
-                    }
+                onHomeClick = {
+                    navController.navigate(Screen.Home) { launchSingleTop = true }
+                },
+                onMenuClick = {
+                    navController.navigate(Screen.Menu) { launchSingleTop = true }
+                },
+                onRewardsClick = {
+                    navController.navigate(Screen.Rewards) { launchSingleTop = true }
                 }
             )
         }
