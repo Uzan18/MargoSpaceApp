@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.pemmob.margocoffe.navigation.Screen
+import com.pemmob.margocoffe.ui.screens.AuthScreen
 import com.pemmob.margocoffe.ui.screens.CheckoutScreen
 import com.pemmob.margocoffe.ui.screens.DrinkDetailScreen
 import com.pemmob.margocoffe.ui.screens.HomeScreen
@@ -39,8 +40,19 @@ fun KopiRoyalApp() {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Home
+        startDestination = Screen.Auth
     ) {
+        composable<Screen.Auth> {
+            AuthScreen(
+                onAuthenticated = {
+                    navController.navigate(Screen.Home) {
+                        popUpTo<Screen.Auth> { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
         // ─── Home Screen ────────────────────────────────────────
         composable<Screen.Home> {
             HomeScreen(
