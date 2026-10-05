@@ -19,7 +19,14 @@ import com.pemmob.margocoffe.ui.screens.MenuScreen
 import com.pemmob.margocoffe.ui.screens.OrderStatusScreen
 import com.pemmob.margocoffe.ui.screens.RewardsScreen
 import com.pemmob.margocoffe.ui.theme.KopiRoyalTheme
-import com.pemmob.margocoffe.viewmodel.AppViewModel
+import com.pemmob.margocoffe.viewmodel.CheckoutViewModel
+import com.pemmob.margocoffe.viewmodel.DetailViewModel
+import com.pemmob.margocoffe.viewmodel.HomeViewModel
+import com.pemmob.margocoffe.viewmodel.MenuViewModel
+import com.pemmob.margocoffe.viewmodel.NotificationViewModel
+import com.pemmob.margocoffe.viewmodel.ProfileViewModel
+import com.pemmob.margocoffe.viewmodel.OrderViewModel
+import com.pemmob.margocoffe.viewmodel.RewardsViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,7 +43,13 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun KopiRoyalApp() {
     val navController = rememberNavController()
-    val viewModel: AppViewModel = viewModel()
+    val homeViewModel: HomeViewModel = viewModel()
+    val menuViewModel: MenuViewModel = viewModel()
+    val rewardsViewModel: RewardsViewModel = viewModel()
+    val checkoutViewModel: CheckoutViewModel = viewModel()
+    val notificationViewModel: NotificationViewModel = viewModel()
+    val profileViewModel: ProfileViewModel = viewModel()
+    val orderViewModel: OrderViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -56,7 +69,12 @@ fun KopiRoyalApp() {
         // ─── Home Screen ────────────────────────────────────────
         composable<Screen.Home> {
             HomeScreen(
-                viewModel = viewModel,
+                homeViewModel = homeViewModel,
+                menuViewModel = menuViewModel,
+                rewardsViewModel = rewardsViewModel,
+                checkoutViewModel = checkoutViewModel,
+                notificationViewModel = notificationViewModel,
+                profileViewModel = profileViewModel,
                 onCoffeeClick = { coffeeId ->
                     navController.navigate(Screen.Detail(coffeeId = coffeeId))
                 },
@@ -77,7 +95,8 @@ fun KopiRoyalApp() {
 
         composable<Screen.Menu> {
             MenuScreen(
-                viewModel = viewModel,
+                menuViewModel = menuViewModel,
+                checkoutViewModel = checkoutViewModel,
                 onHomeClick = {
                     navController.navigate(Screen.Home) { launchSingleTop = true }
                 },
@@ -99,7 +118,7 @@ fun KopiRoyalApp() {
         // ─── Rewards Screen ─────────────────────────────────────
         composable<Screen.Rewards> {
             RewardsScreen(
-                viewModel = viewModel,
+                viewModel = rewardsViewModel,
                 onHomeClick = {
                     navController.navigate(Screen.Home) { launchSingleTop = true }
                 },
@@ -115,9 +134,11 @@ fun KopiRoyalApp() {
         // ─── Drink Detail Screen ────────────────────────────────
         composable<Screen.Detail> { backStackEntry ->
             val detail: Screen.Detail = backStackEntry.toRoute()
+            val detailViewModel: DetailViewModel = viewModel()
+
             DrinkDetailScreen(
                 coffeeId = detail.coffeeId,
-                viewModel = viewModel,
+                viewModel = detailViewModel,
                 onBackClick = { navController.popBackStack() },
                 onAddToCart = {
                     navController.navigate(Screen.Menu) {
@@ -131,7 +152,8 @@ fun KopiRoyalApp() {
         // ─── Checkout Screen ────────────────────────────────────
         composable<Screen.Checkout> {
             CheckoutScreen(
-                viewModel = viewModel,
+                viewModel = checkoutViewModel,
+                orderViewModel = orderViewModel,
                 onBackClick = { navController.popBackStack() },
                 onProceedPayment = {
                     navController.navigate(Screen.OrderStatus) {
@@ -144,7 +166,7 @@ fun KopiRoyalApp() {
         // ─── Order Status Screen (Pesanan Saya) ─────────────────
         composable<Screen.OrderStatus> {
             OrderStatusScreen(
-                viewModel = viewModel,
+                viewModel = orderViewModel,
                 onHomeClick = {
                     navController.navigate(Screen.Home) { launchSingleTop = true }
                 },

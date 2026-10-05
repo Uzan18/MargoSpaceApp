@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,7 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.pemmob.margocoffe.viewmodel.AppViewModel
+import com.pemmob.margocoffe.viewmodel.RewardsEvent
+import com.pemmob.margocoffe.viewmodel.RewardsViewModel
 
 data class RewardItem(
     val title: String,
@@ -35,14 +37,17 @@ data class RewardItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RewardsScreen(
-    viewModel: AppViewModel,
+    viewModel: RewardsViewModel,
     onHomeClick: () -> Unit,
     onMenuClick: () -> Unit,
     onOrdersClick: () -> Unit
 ) {
-    val homeState by viewModel.homeState.collectAsState()
-    val loyaltyPoints = homeState.loyaltyPoints
-    val userName = homeState.userName
+    val rewardsState by viewModel.uiState.collectAsState()
+    val loyaltyPoints = rewardsState.loyaltyPoints
+    val userName = "FAUZAN"
+    val membershipTier = rewardsState.membershipTier
+    val stampCount = rewardsState.stamps
+    val freeCoffeeRewards = rewardsState.freeCoffeeRewards
 
     val rewardsCatalog = listOf(
         RewardItem("Gratis Up-Size", "Upgrade ukuran minuman reguler ke besar", 5, "🥤"),
@@ -168,7 +173,7 @@ fun RewardsScreen(
                                     .padding(horizontal = 10.dp, vertical = 4.dp)
                             ) {
                                 Text(
-                                    text = "Silver Member",
+                                    text = membershipTier.displayName,
                                     color = Color.White,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold
@@ -268,7 +273,7 @@ fun RewardsScreen(
                         }
 
                         Text(
-                            text = "5 / 10",
+                            text = "$stampCount / 10",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -284,7 +289,7 @@ fun RewardsScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             for (i in 1..5) {
-                                StampCircle(isStamped = true, index = i)
+                                StampCircle(isStamped = i <= stampCount, index = i)
                             }
                         }
                         Row(
@@ -292,7 +297,11 @@ fun RewardsScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             for (i in 6..10) {
-                                StampCircle(isStamped = false, index = i, isGift = i == 10)
+                                StampCircle(
+                                    isStamped = i <= stampCount,
+                                    index = i,
+                                    isGift = i == 10 && stampCount < 10
+                                )
                             }
                         }
                     }
@@ -300,7 +309,11 @@ fun RewardsScreen(
                     Spacer(modifier = Modifier.height(14.dp))
 
                     Text(
-                        text = "☕ Kumpulkan 5 stamp lagi untuk dapat 1 kopi gratis!",
+                        text = if (stampCount >= 10) {
+                            "☕ Kamu mendapatkan 1 kopi gratis!"
+                        } else {
+                            "☕ Kumpulkan ${10 - stampCount} stamp lagi untuk dapat 1 kopi gratis!"
+                        },
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold
@@ -308,7 +321,46 @@ fun RewardsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            if (freeCoffeeRewards > 0) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CardGiftcard,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Kopi Gratis Tersedia",
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "$freeCoffeeRewards reward siap digunakan",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            } else {
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
             // ─── Redeem Rewards Catalog ─────────────────────────────
             Text(
@@ -391,7 +443,11 @@ fun RewardsScreen(
                             Spacer(modifier = Modifier.width(8.dp))
 
                             Button(
-                                onClick = { },
+                                onClick = {
+                                    viewModel.onEvent(
+                                        RewardsEvent.RedeemReward(reward.pointsRequired)
+                                    )
+                                },
                                 enabled = canRedeem,
                                 shape = RoundedCornerShape(20.dp),
                                 colors = ButtonDefaults.buttonColors(

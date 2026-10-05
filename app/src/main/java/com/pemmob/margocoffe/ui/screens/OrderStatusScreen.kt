@@ -35,18 +35,19 @@ import coil.compose.AsyncImage
 import com.pemmob.margocoffe.R
 import com.pemmob.margocoffe.data.PastOrder
 import com.pemmob.margocoffe.ui.components.formatRupiah
-import com.pemmob.margocoffe.viewmodel.AppViewModel
+import com.pemmob.margocoffe.viewmodel.OrderEvent
+import com.pemmob.margocoffe.viewmodel.OrderViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderStatusScreen(
-    viewModel: AppViewModel,
+    viewModel: OrderViewModel,
     onHomeClick: () -> Unit,
     onMenuClick: () -> Unit,
     onRewardsClick: () -> Unit
 ) {
-    val orderState by viewModel.orderStatusState.collectAsState()
+    val orderState by viewModel.uiState.collectAsState()
     var selectedTab by remember { androidx.compose.runtime.mutableIntStateOf(0) } // 0: Dalam Proses, 1: Riwayat Selesai
     var showReceiptDialog by remember { mutableStateOf(false) }
     var showPickupDialog by remember { mutableStateOf(false) }
@@ -527,7 +528,7 @@ fun OrderStatusScreen(
                     PastOrderCard(
                         pastOrder = pastOrder,
                         onReorder = {
-                            viewModel.reorderCoffee(pastOrder.coffeeIdToReorder)
+                            viewModel.onEvent(OrderEvent.Reorder(pastOrder.coffeeIdToReorder))
                             coroutineScope.launch {
                                 snackbarHostState.showSnackbar(
                                     message = "${pastOrder.orderNumber} berhasil ditambahkan ke keranjang!",
@@ -555,7 +556,7 @@ fun OrderStatusScreen(
                     PastOrderCard(
                         pastOrder = pastOrder,
                         onReorder = {
-                            viewModel.reorderCoffee(pastOrder.coffeeIdToReorder)
+                            viewModel.onEvent(OrderEvent.Reorder(pastOrder.coffeeIdToReorder))
                             coroutineScope.launch {
                                 snackbarHostState.showSnackbar(
                                     message = "${pastOrder.orderNumber} berhasil ditambahkan ke keranjang!",
