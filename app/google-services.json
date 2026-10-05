@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "336349551307",
+    "project_id": "margospace-96685",
+    "storage_bucket": "margospace-96685.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:336349551307:android:2c993fcacae023c9b2d94e",
+        "android_client_info": {
+          "package_name": "com.pemmob.margocoffe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCPd9HOuLKtmBycIgHBhcYvaItVjBxV7Mg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

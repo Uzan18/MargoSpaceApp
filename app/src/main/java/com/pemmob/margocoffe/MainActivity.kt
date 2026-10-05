@@ -19,19 +19,21 @@ import com.pemmob.margocoffe.ui.screens.MenuScreen
 import com.pemmob.margocoffe.ui.screens.OrderStatusScreen
 import com.pemmob.margocoffe.ui.screens.RewardsScreen
 import com.pemmob.margocoffe.ui.theme.KopiRoyalTheme
+import com.pemmob.margocoffe.viewmodel.AuthViewModel
 import com.pemmob.margocoffe.viewmodel.CheckoutViewModel
 import com.pemmob.margocoffe.viewmodel.DetailViewModel
 import com.pemmob.margocoffe.viewmodel.HomeViewModel
 import com.pemmob.margocoffe.viewmodel.MenuViewModel
 import com.pemmob.margocoffe.viewmodel.NotificationViewModel
-import com.pemmob.margocoffe.viewmodel.ProfileViewModel
 import com.pemmob.margocoffe.viewmodel.OrderViewModel
+import com.pemmob.margocoffe.viewmodel.ProfileViewModel
 import com.pemmob.margocoffe.viewmodel.RewardsViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             KopiRoyalTheme {
                 KopiRoyalApp()
@@ -43,6 +45,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun KopiRoyalApp() {
     val navController = rememberNavController()
+
     val homeViewModel: HomeViewModel = viewModel()
     val menuViewModel: MenuViewModel = viewModel()
     val rewardsViewModel: RewardsViewModel = viewModel()
@@ -51,15 +54,21 @@ fun KopiRoyalApp() {
     val profileViewModel: ProfileViewModel = viewModel()
     val orderViewModel: OrderViewModel = viewModel()
 
+    // AuthViewModel harus diambil di dalam @Composable
+    val authViewModel: AuthViewModel = viewModel()
+
     NavHost(
         navController = navController,
         startDestination = Screen.Auth
     ) {
         composable<Screen.Auth> {
             AuthScreen(
+                authViewModel = authViewModel,
                 onAuthenticated = {
                     navController.navigate(Screen.Home) {
-                        popUpTo<Screen.Auth> { inclusive = true }
+                        popUpTo<Screen.Auth> {
+                            inclusive = true
+                        }
                         launchSingleTop = true
                     }
                 }
