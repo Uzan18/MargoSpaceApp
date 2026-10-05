@@ -79,6 +79,21 @@ data class PastOrder(
     val totalPrice: Int,
     val paymentMethod: String,
     val imageUrl: String,
+    val imageRes: Int = 0,
     val status: String = "Selesai",
     val coffeeIdToReorder: Int = 1
 )
+
+/**
+ * User Profile model representing a customer profile in Firestore users/{uid}.
+ */
+data class UserProfile(
+    val uid: String = "",
+    val name: String = "",
+    val email: String = "",
+    val phone: String = "",
+    val imageUrl: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
+)
+

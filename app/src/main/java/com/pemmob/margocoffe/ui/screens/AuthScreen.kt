@@ -65,7 +65,7 @@ import com.pemmob.margocoffe.R
 import com.pemmob.margocoffe.viewmodel.AuthEvent
 import com.pemmob.margocoffe.viewmodel.AuthViewModel
 
-private val MargoBlue = Color(0xFF084DB5)
+private val MargoBlue = Color(0xFF004AAD)
 private val Ink = Color(0xFF000000)
 private val MutedInk = Color(0xFF465264)
 private val FieldBorder = Color(0xFF9AA5B5)
@@ -134,48 +134,19 @@ fun AuthScreen(
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .imePadding()
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 28.dp)
-                .height(218.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .height(230.dp)
+                .background(MargoBlue),
+            contentAlignment = Alignment.Center
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(R.drawable.logomargo_foreground),
-                    contentDescription = "Maskot Margo",
-                    modifier = Modifier.size(136.dp)
-                )
-
-                Spacer(Modifier.width(2.dp))
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "MARGO",
-                        color = Color.White,
-                        fontFamily = FontFamily.SansSerif,
-                        fontSize = 46.sp,
-                        fontWeight = FontWeight.Black,
-                        fontStyle = FontStyle.Italic
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 1.dp)
-                            .width(64.dp)
-                            .height(4.dp)
-                            .background(Color.White)
-                    )
-                }
-            }
-
-            Text(
-                text = "Temukan rasa favoritmu",
-                color = Color.White,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium
+            Image(
+                painter = painterResource(R.drawable.banner_margo),
+                contentDescription = "Margo Space",
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentScale = ContentScale.Crop
             )
         }
 
@@ -485,66 +456,22 @@ private fun MargoWelcomeScreen(
     onRegister: () -> Unit,
     onSkip: () -> Unit
 ) {
-    val productImages = listOf(
-        R.drawable.chocomargo,
-        R.drawable.chillberry,
-        R.drawable.milo
-    )
-
-    val pagerState = rememberPagerState(
-        pageCount = { productImages.size }
-    )
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MargoBlue)
             .windowInsetsPadding(WindowInsets.safeDrawing)
     ) {
-        HorizontalPager(
-            state = pagerState,
+        Image(
+            painter = painterResource(R.drawable.banner_margo),
+            contentDescription = "Margo Space",
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.58f)
-                .background(Color.White)
-        ) { page ->
-            Image(
-                painter = painterResource(productImages[page]),
-                contentDescription = "Menu minuman Margo",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-        }
+                .weight(0.58f),
+            contentScale = ContentScale.Crop
+        )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(32.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            repeat(productImages.size) { page ->
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 6.dp)
-                        .size(
-                            if (pagerState.currentPage == page) {
-                                9.dp
-                            } else {
-                                8.dp
-                            }
-                        )
-                        .clip(CircleShape)
-                        .background(
-                            if (pagerState.currentPage == page) {
-                                Color.White
-                            } else {
-                                Color(0xFF8DB8F2)
-                            }
-                        )
-                )
-            }
-        }
+        Spacer(Modifier.height(16.dp))
 
         Column(
             modifier = Modifier

@@ -27,4 +27,7 @@ sealed class Screen {
 
     @Serializable
     data object OrderStatus : Screen()
+
+    @Serializable
+    data object Profile : Screen()
 }

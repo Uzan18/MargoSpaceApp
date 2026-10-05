@@ -136,6 +136,7 @@ class AuthViewModel(
             val result = repository.register(
                 email = email.trim(),
                 name = name.trim(),
+                phone = phone.trim(),
                 password = password
             )
 

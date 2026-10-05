@@ -7,28 +7,32 @@ import com.pemmob.margocoffe.data.MockRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 data class OrderStatusUiState(
-    val hasActiveOrder: Boolean = true,
-    val orderNumber: String = "Pesanan #042",
+    val hasActiveOrder: Boolean = false,
+    val isSubmitting: Boolean = false,
+    val orderNumber: String = "",
     val tableNumber: String = "Meja 07",
-    val customerName: String = "Fauzan",
+    val customerName: String = "",
     val branchName: String = "Cabang Margo Space",
     val isDineIn: Boolean = true,
     val items: List<CartItem> = emptyList(),
-    val totalAmount: Int = 52800,
-    val orderTime: String = "10:15 WIB",
+    val totalAmount: Int = 0,
+    val discountAmount: Int = 0,
+    val orderTime: String = "",
     val estimatedTime: String = "~5-8 menit",
     val statusBadge: String = "Menunggu Dipanggil",
     val statusMessage: String = "Pesanan Berhasil!",
     val statusSubtitle: String =
         "Silakan tunggu nama atau nomor antrean Anda dipanggil di kasir.",
     val pastOrders: List<com.pemmob.margocoffe.data.PastOrder> =
-        emptyList()
+        com.pemmob.margocoffe.data.MockRepository.mockPastOrders
 )
 
 class OrderViewModel : ViewModel() {
@@ -51,10 +55,11 @@ class OrderViewModel : ViewModel() {
 
             is OrderEvent.PlaceOrder -> {
                 placeOrder(
-                    customerName =
-                        event.customerName,
-                    isDineIn =
-                        event.isDineIn
+                    customerName = event.customerName,
+                    isDineIn = event.isDineIn,
+                    useFreeCoffee = event.useFreeCoffee,
+                    discountAmount = event.discountAmount,
+                    appliedVoucherId = event.appliedVoucherId
                 )
             }
 
@@ -63,13 +68,67 @@ class OrderViewModel : ViewModel() {
                     event.coffeeId
                 )
             }
+
+            OrderEvent.CompleteOrder -> {
+                completeOrder()
+            }
+        }
+    }
+
+    fun completeOrder() {
+        val current = _uiState.value
+        if (!current.hasActiveOrder) return
+
+        val firstCoffee = current.items.firstOrNull()?.coffee
+        val resolvedCoffee = firstCoffee?.let { c ->
+            if (c.imageRes != 0 || c.imageUrl.isNotBlank()) c
+            else MockRepository.getCoffeeById(c.id) ?: MockRepository.coffeeMenu.find { it.name.equals(c.name, ignoreCase = true) }
+        }
+        val resolvedImageRes = if (firstCoffee?.imageRes != null && firstCoffee.imageRes != 0) {
+            firstCoffee.imageRes
+        } else {
+            resolvedCoffee?.imageRes ?: 0
+        }
+        val resolvedImageUrl = if (!firstCoffee?.imageUrl.isNullOrBlank()) {
+            firstCoffee.imageUrl
+        } else {
+            resolvedCoffee?.imageUrl ?: ""
+        }
+
+        val itemsSummary = current.items.joinToString(", ") { "${it.quantity}x ${it.coffee.name}" }.ifBlank { "Pesanan Margo Space" }
+
+        val newPastOrder = com.pemmob.margocoffe.data.PastOrder(
+            id = System.currentTimeMillis().toString(),
+            orderNumber = current.orderNumber,
+            date = current.orderTime,
+            itemsSummary = itemsSummary,
+            totalPrice = current.totalAmount,
+            paymentMethod = "QRIS / Lunas",
+            imageUrl = resolvedImageUrl,
+            imageRes = resolvedImageRes,
+            status = "Selesai",
+            coffeeIdToReorder = firstCoffee?.id ?: 1
+        )
+
+        _uiState.update {
+            it.copy(
+                hasActiveOrder = false,
+                pastOrders = listOf(newPastOrder) + it.pastOrders
+            )
         }
     }
 
     fun placeOrder(
         customerName: String,
-        isDineIn: Boolean
+        isDineIn: Boolean,
+        useFreeCoffee: Boolean = false,
+        discountAmount: Int = 0,
+        appliedVoucherId: String? = null
     ) {
+        // Cegah pembuatan pesanan ganda (double-click/recomposition)
+        if (_uiState.value.isSubmitting) {
+            return
+        }
 
         val cartItems =
             CartStore.items.value
@@ -78,21 +137,30 @@ class OrderViewModel : ViewModel() {
             return
         }
 
+        _uiState.value = _uiState.value.copy(isSubmitting = true)
+
         val subtotal =
             cartItems.sumOf {
                 it.totalPrice
             }
 
-        val tax =
-            (subtotal * 0.1).toInt()
+        val calculatedDiscount = if (discountAmount > 0) {
+            discountAmount
+        } else if (useFreeCoffee && cartItems.isNotEmpty()) {
+            cartItems.minOf { it.coffee.price + it.selectedSize.extraPrice }
+        } else {
+            0
+        }
+        val discount = calculatedDiscount.coerceAtMost(subtotal)
 
-        val total =
-            subtotal + tax
+        val taxableAmount = (subtotal - discount).coerceAtLeast(0)
+        val tax = (taxableAmount * 0.1).toInt()
+        val total = taxableAmount + tax
 
         val currentTime =
             SimpleDateFormat(
-                "HH:mm",
-                Locale.getDefault()
+                "d MMM yyyy, HH:mm",
+                Locale("id", "ID")
             ).format(Date()) + " WIB"
 
         val orderNo =
@@ -101,15 +169,18 @@ class OrderViewModel : ViewModel() {
                 .toString()
                 .padStart(2, '0')
 
+        val resolvedCustomerName = customerName.ifBlank {
+            ProfileStore.data.value.name.ifBlank { "Pelanggan Margo" }
+        }
+
+        val newOrderNumber = "Pesanan #$orderNo"
+
         _uiState.value =
             _uiState.value.copy(
                 hasActiveOrder = true,
-                orderNumber =
-                    "Pesanan #$orderNo",
-                customerName =
-                    customerName.ifEmpty {
-                        "Fauzan"
-                    },
+                isSubmitting = false,
+                orderNumber = newOrderNumber,
+                customerName = resolvedCustomerName,
                 isDineIn = isDineIn,
                 tableNumber =
                     if (isDineIn) {
@@ -121,6 +192,7 @@ class OrderViewModel : ViewModel() {
                     "Cabang Margo Space",
                 items = cartItems,
                 totalAmount = total,
+                discountAmount = discount,
                 orderTime = currentTime,
                 estimatedTime = "~5-8 menit",
                 statusBadge =
@@ -131,10 +203,55 @@ class OrderViewModel : ViewModel() {
                     "Silakan tunggu nama atau nomor antrean Anda dipanggil di kasir."
             )
 
+        // Bersihkan keranjang belanja
         CartStore.clear()
 
-        // Rewards akan kita hubungkan melalui shared RewardsStore.
+        // Jika menggunakan voucher, kurangi/hapus voucher dari RewardsStore
+        if (!appliedVoucherId.isNullOrBlank()) {
+            RewardsStore.useVoucher(appliedVoucherId)
+        }
+
+        // Jika menggunakan reward kopi gratis, kurangi reward setelah order berhasil
+        if (useFreeCoffee) {
+            RewardsStore.useFreeCoffeeReward()
+        }
+
+        // Tambah poin loyalty rewards
         RewardsStore.addPoints(10)
+
+        // Notifikasi pesanan baru
+        NotificationStore.add(
+            title = "Pesanan Berhasil Diproses",
+            message = "$newOrderNumber sedang disiapkan. Silakan tunggu di kasir.",
+            type = NotificationType.ORDER
+        )
+
+        // Catat ke Firestore jika user terautentikasi
+        val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        if (currentUser != null) {
+            viewModelScope.launch {
+                try {
+                    val orderMap = hashMapOf(
+                        "orderNumber" to newOrderNumber,
+                        "customerName" to resolvedCustomerName,
+                        "isDineIn" to isDineIn,
+                        "totalAmount" to total,
+                        "orderTime" to currentTime,
+                        "itemCount" to cartItems.size,
+                        "createdAt" to System.currentTimeMillis()
+                    )
+                    com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(currentUser.uid)
+                        .collection("orders")
+                        .document("order_$orderNo")
+                        .set(orderMap)
+                        .await()
+                } catch (_: Exception) {
+                    // Simpanan lokal tetap berhasil
+                }
+            }
+        }
     }
 
     private fun reorderCoffee(
@@ -174,76 +291,15 @@ class OrderViewModel : ViewModel() {
     }
 
     private fun initDefaultOrderState() {
-
-        val coffee1 =
-            MockRepository.getCoffeeById(1)
-
-        val coffee2 =
-            MockRepository.getCoffeeById(4)
-
-        val demoItems =
-            if (
-                coffee1 != null &&
-                coffee2 != null
-            ) {
-
-                listOf(
-
-                    CartItem(
-                        coffee = coffee1,
-                        quantity = 1,
-                        selectedSize =
-                            MockRepository
-                                .sizeOptions[0],
-                        selectedIceLevel =
-                            MockRepository
-                                .iceLevelOptions[0],
-                        selectedSweetness =
-                            MockRepository
-                                .sweetnessOptions[0]
-                    ),
-
-                    CartItem(
-                        coffee =
-                            coffee2.copy(
-                                name =
-                                    "Velvet Cappuccino"
-                            ),
-                        quantity = 1,
-                        selectedSize =
-                            MockRepository
-                                .sizeOptions[0],
-                        selectedIceLevel =
-                            MockRepository
-                                .iceLevelOptions[0],
-                        selectedSweetness =
-                            MockRepository
-                                .sweetnessOptions[0]
-                    )
-                )
-
-            } else {
-                emptyList()
-            }
-
         _uiState.value =
             _uiState.value.copy(
-                hasActiveOrder = true,
-                orderNumber =
-                    "Pesanan #042",
-                tableNumber = "Meja 07",
-                customerName = "Fauzan",
-                branchName =
-                    "Cabang Margo Space",
-                items = demoItems,
-                totalAmount = 52800,
-                orderTime = "10:15 WIB",
-                estimatedTime =
-                    "~5-8 menit",
-                statusBadge =
-                    "Menunggu Dipanggil",
-                pastOrders =
-                    MockRepository.mockPastOrders
+                hasActiveOrder = false,
+                orderNumber = "",
+                customerName = ProfileStore.data.value.name,
+                branchName = "Cabang Margo Space",
+                items = emptyList(),
+                totalAmount = 0,
+                pastOrders = MockRepository.mockPastOrders
             )
     }
 }

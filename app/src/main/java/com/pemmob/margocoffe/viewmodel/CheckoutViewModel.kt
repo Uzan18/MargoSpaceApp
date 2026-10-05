@@ -69,7 +69,13 @@ data class CheckoutUiState(
     val selectedBranch: MargoBranch? = null,
     val distanceToBranchKm: Double? = null,
     val isLocationLoading: Boolean = false,
-    val locationError: String? = null
+    val locationError: String? = null,
+    val useReward: Boolean = false,
+    val availableFreeCoffee: Int = 0,
+    val availableVouchers: List<RewardVoucher> = emptyList(),
+    val selectedVoucher: RewardVoucher? = null,
+    val userPoints: Int = 0,
+    val usePoints: Boolean = false
 ) {
     val branchName: String
         get() = selectedBranch?.name ?: "Lokasi belum ditentukan"
@@ -77,11 +83,41 @@ data class CheckoutUiState(
     val subtotal: Int
         get() = cartItems.sumOf { it.totalPrice }
 
+    val rewardDiscount: Int
+        get() {
+            if (cartItems.isEmpty()) return 0
+            var discount = 0
+
+            // 1. Diskon dari voucher yang dipilih
+            selectedVoucher?.let { v ->
+                if (v.isFreeCoffee) {
+                    discount += cartItems.minOf { it.coffee.price + it.selectedSize.extraPrice }
+                } else if (v.isFreeUpSize) {
+                    val maxUpSize = cartItems.maxOfOrNull { it.selectedSize.extraPrice } ?: 0
+                    discount += if (maxUpSize > 0) maxUpSize else 4000
+                } else if (v.discountAmount > 0) {
+                    discount += v.discountAmount
+                }
+            }
+
+            // 2. Diskon kopi gratis jika aktif tanpa voucher
+            if (selectedVoucher == null && useReward && availableFreeCoffee > 0) {
+                discount += cartItems.minOf { it.coffee.price + it.selectedSize.extraPrice }
+            }
+
+            // 3. Diskon dari poin reward
+            if (usePoints && userPoints >= 10) {
+                discount += (userPoints / 10) * 5000
+            }
+
+            return discount.coerceAtMost(subtotal)
+        }
+
     val tax: Int
-        get() = (subtotal * 0.1).toInt()
+        get() = (((subtotal - rewardDiscount).coerceAtLeast(0)) * 0.1).toInt()
 
     val total: Int
-        get() = subtotal + tax
+        get() = (subtotal - rewardDiscount).coerceAtLeast(0) + tax
 }
 
 class CheckoutViewModel : ViewModel() {
@@ -93,6 +129,22 @@ class CheckoutViewModel : ViewModel() {
         viewModelScope.launch {
             CartStore.items.collect { items ->
                 _uiState.update { it.copy(cartItems = items) }
+            }
+        }
+        viewModelScope.launch {
+            RewardsStore.data.collect { rewards ->
+                _uiState.update { current ->
+                    val activeVoucher = current.selectedVoucher?.let { sel ->
+                        rewards.vouchers.find { it.id == sel.id }
+                    } ?: rewards.vouchers.firstOrNull()
+
+                    current.copy(
+                        availableFreeCoffee = rewards.freeCoffeeRewards,
+                        availableVouchers = rewards.vouchers,
+                        selectedVoucher = activeVoucher,
+                        userPoints = rewards.points
+                    )
+                }
             }
         }
     }
@@ -109,6 +161,18 @@ class CheckoutViewModel : ViewModel() {
 
             is CheckoutEvent.RemoveItem -> {
                 CartStore.remove(event.index)
+            }
+
+            is CheckoutEvent.ToggleUseReward -> {
+                _uiState.update { it.copy(useReward = event.use) }
+            }
+
+            is CheckoutEvent.SelectVoucher -> {
+                _uiState.update { it.copy(selectedVoucher = event.voucher) }
+            }
+
+            is CheckoutEvent.ToggleUsePoints -> {
+                _uiState.update { it.copy(usePoints = event.use) }
             }
 
             CheckoutEvent.RequestCurrentLocation -> {

@@ -31,32 +31,47 @@ data class RewardItem(
     val title: String,
     val description: String,
     val pointsRequired: Int,
-    val icon: String
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val discountAmount: Int = 0,
+    val isFreeCoffee: Boolean = false,
+    val isFreeUpSize: Boolean = false
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RewardsScreen(
     viewModel: RewardsViewModel,
+    profileViewModel: com.pemmob.margocoffe.viewmodel.ProfileViewModel? = null,
     onHomeClick: () -> Unit,
     onMenuClick: () -> Unit,
     onOrdersClick: () -> Unit
 ) {
     val rewardsState by viewModel.uiState.collectAsState()
+    val profileData by com.pemmob.margocoffe.viewmodel.ProfileStore.data.collectAsState()
     val loyaltyPoints = rewardsState.loyaltyPoints
-    val userName = "FAUZAN"
+    val userName = profileViewModel?.uiState?.collectAsState()?.value?.name ?: profileData.name
     val membershipTier = rewardsState.membershipTier
     val stampCount = rewardsState.stamps
     val freeCoffeeRewards = rewardsState.freeCoffeeRewards
 
     val rewardsCatalog = listOf(
-        RewardItem("Gratis Up-Size", "Upgrade ukuran minuman reguler ke besar", 5, "🥤"),
-        RewardItem("Voucher Diskon Rp 10.000", "Potongan harga untuk semua menu minuman", 15, "🏷️"),
-        RewardItem("Gratis 1 Kopi Pilihan", "Pilih Es Kopi Susu Aren atau Americano gratis", 25, "☕"),
-        RewardItem("Tumbler Margo Space", "Tumbler eksklusif tahan panas & dingin 500ml", 100, "🎁")
+        RewardItem("Gratis Up-Size", "Upgrade ukuran minuman reguler ke besar", 5, Icons.Outlined.LocalCafe, isFreeUpSize = true, discountAmount = 4000),
+        RewardItem("Voucher Diskon Rp 10.000", "Potongan harga untuk semua menu minuman", 15, Icons.Outlined.LocalOffer, discountAmount = 10000),
+        RewardItem("Gratis 1 Kopi Pilihan", "Pilih Es Kopi Susu Aren atau Americano gratis", 25, Icons.Outlined.Coffee, isFreeCoffee = true),
+        RewardItem("Tumbler Margo Space", "Tumbler eksklusif tahan panas & dingin 500ml", 100, Icons.Outlined.CardGiftcard, discountAmount = 0)
     )
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    androidx.compose.runtime.LaunchedEffect(rewardsState.lastRedeemedMessage) {
+        rewardsState.lastRedeemedMessage?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            viewModel.clearRedeemedMessage()
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -165,20 +180,6 @@ fun RewardsScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
-
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(Color.White.copy(alpha = 0.2f))
-                                    .padding(horizontal = 10.dp, vertical = 4.dp)
-                            ) {
-                                Text(
-                                    text = membershipTier.displayName,
-                                    color = Color.White,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
                         }
 
                         // Bottom row of card (Points)
@@ -215,29 +216,6 @@ fun RewardsScreen(
                                         fontWeight = FontWeight.SemiBold
                                     )
                                 }
-                            }
-
-                            // Member Code
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(Color.White)
-                                    .padding(horizontal = 14.dp, vertical = 8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.QrCode,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Member ID",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
                             }
                         }
                     }
@@ -362,6 +340,95 @@ fun RewardsScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
+            // ─── Voucher Saya yang Siap Digunakan ───────────────────
+            if (rewardsState.vouchers.isNotEmpty()) {
+                Text(
+                    text = "Voucher Saya (${rewardsState.vouchers.size})",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Voucher aktif yang dapat kamu gunakan saat checkout pesanan",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    rewardsState.vouchers.forEach { voucher ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF86EFAC)),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(42.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFDCFCE7)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.LocalOffer,
+                                            contentDescription = null,
+                                            tint = Color(0xFF16A34A),
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(
+                                            text = voucher.title,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF14532D)
+                                        )
+                                        Text(
+                                            text = voucher.description,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color(0xFF166534),
+                                            fontSize = 11.sp
+                                        )
+                                    }
+                                }
+
+                                Button(
+                                    onClick = onMenuClick,
+                                    shape = RoundedCornerShape(18.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF16A34A)
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = "Pakai",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
             // ─── Redeem Rewards Catalog ─────────────────────────────
             Text(
                 text = "Katalog Penukaran Poin",
@@ -404,7 +471,12 @@ fun RewardsScreen(
                                         .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(text = reward.icon, fontSize = 22.sp)
+                                    Icon(
+                                        imageVector = reward.icon,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
                                 }
 
                                 Spacer(modifier = Modifier.width(14.dp))
@@ -445,7 +517,14 @@ fun RewardsScreen(
                             Button(
                                 onClick = {
                                     viewModel.onEvent(
-                                        RewardsEvent.RedeemReward(reward.pointsRequired)
+                                        RewardsEvent.RedeemReward(
+                                            pointsRequired = reward.pointsRequired,
+                                            title = reward.title,
+                                            description = reward.description,
+                                            discountAmount = reward.discountAmount,
+                                            isFreeCoffee = reward.isFreeCoffee,
+                                            isFreeUpSize = reward.isFreeUpSize
+                                        )
                                     )
                                 },
                                 enabled = canRedeem,

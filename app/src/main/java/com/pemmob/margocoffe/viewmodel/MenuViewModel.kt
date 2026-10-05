@@ -36,6 +36,20 @@ data class MenuUiState(
                 }
                 .take(4)
 
+    val bestSellerPerCategory: List<Coffee>
+        get() {
+            val categories = if (selectedCategory == "Semua") {
+                listOf("Coffee", "Non-Coffee")
+            } else {
+                listOf(selectedCategory)
+            }
+            return categories.flatMap { cat ->
+                val inCat = allDrinks.filter { it.category.equals(cat, ignoreCase = true) }
+                val bestSellers = inCat.filter { it.isBestSeller }
+                if (bestSellers.isNotEmpty()) bestSellers.take(2) else inCat.take(2)
+            }
+        }
+
     val visibleDrinks: List<Coffee>
         get() =
             allDrinks.filter { coffee ->

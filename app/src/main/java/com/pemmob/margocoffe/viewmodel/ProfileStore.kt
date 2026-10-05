@@ -6,9 +6,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 data class ProfileData(
-    val name: String = "FAUZAN",
-    val phone: String = "081234567890",
-    val email: String = "fauzan@margospace.com",
+    val uid: String = "",
+    val name: String = "Teman Margo",
+    val phone: String = "",
+    val email: String = "",
     val imageUrl: String = ""
 )
 
@@ -17,6 +18,7 @@ object ProfileStore {
     val data: StateFlow<ProfileData> = _data.asStateFlow()
 
     fun updateProfile(
+        uid: String = _data.value.uid,
         name: String,
         phone: String,
         email: String,
@@ -24,6 +26,7 @@ object ProfileStore {
     ) {
         _data.update {
             it.copy(
+                uid = uid,
                 name = name,
                 phone = phone,
                 email = email,
@@ -31,4 +34,9 @@ object ProfileStore {
             )
         }
     }
+
+    fun reset() {
+        _data.value = ProfileData(name = "Teman Margo")
+    }
 }
+

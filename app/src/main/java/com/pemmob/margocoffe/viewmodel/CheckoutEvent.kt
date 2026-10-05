@@ -11,6 +11,9 @@ sealed interface CheckoutEvent {
         val longitude: Double
     ) : CheckoutEvent
     data class LocationError(val message: String) : CheckoutEvent
+    data class ToggleUseReward(val use: Boolean) : CheckoutEvent
+    data class SelectVoucher(val voucher: RewardVoucher?) : CheckoutEvent
+    data class ToggleUsePoints(val use: Boolean) : CheckoutEvent
 
     data object ProceedPayment : CheckoutEvent
 }

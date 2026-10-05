@@ -5,10 +5,27 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+data class RewardVoucher(
+    val id: String,
+    val title: String,
+    val description: String,
+    val discountAmount: Int = 0,
+    val isFreeCoffee: Boolean = false,
+    val isFreeUpSize: Boolean = false
+)
+
 data class RewardsData(
-    val points: Int = 5,
-    val stamps: Int = 5,
-    val freeCoffeeRewards: Int = 0
+    val points: Int = 20,
+    val stamps: Int = 0,
+    val freeCoffeeRewards: Int = 0,
+    val vouchers: List<RewardVoucher> = listOf(
+        RewardVoucher(
+            id = "vch_welcome_10k",
+            title = "Voucher Diskon Rp 10.000",
+            description = "Potongan harga Rp 10.000 untuk pesanan di Margo Space",
+            discountAmount = 10000
+        )
+    )
 ) {
     val membershipTier: MembershipTier
         get() = MembershipTier.fromPoints(points)
@@ -45,10 +62,18 @@ object RewardsStore {
             val newStampCount = current.stamps + 1
 
             if (newStampCount >= MAX_STAMPS) {
+                val stampVoucher = RewardVoucher(
+                    id = "vch_stamp_${System.currentTimeMillis()}",
+                    title = "Gratis 1 Kopi (Stamp Reward)",
+                    description = "Reward 10 stamp kopi gratis dari Margo Space",
+                    discountAmount = 0,
+                    isFreeCoffee = true
+                )
                 current.copy(
                     points = current.points + points,
                     stamps = 0,
-                    freeCoffeeRewards = current.freeCoffeeRewards + 1
+                    freeCoffeeRewards = current.freeCoffeeRewards + 1,
+                    vouchers = current.vouchers + stampVoucher
                 )
             } else {
                 current.copy(
@@ -59,7 +84,14 @@ object RewardsStore {
         }
     }
 
-    fun redeem(pointsRequired: Int): Boolean {
+    fun redeem(
+        pointsRequired: Int,
+        title: String = "Voucher Diskon",
+        description: String = "Potongan harga pesanan",
+        discountAmount: Int = 0,
+        isFreeCoffee: Boolean = false,
+        isFreeUpSize: Boolean = false
+    ): Boolean {
         if (pointsRequired <= 0) return false
 
         var redeemed = false
@@ -67,13 +99,40 @@ object RewardsStore {
         _data.update { current ->
             if (current.points >= pointsRequired) {
                 redeemed = true
-                current.copy(points = current.points - pointsRequired)
+                val newVoucher = RewardVoucher(
+                    id = "vch_${System.currentTimeMillis()}",
+                    title = title,
+                    description = description,
+                    discountAmount = discountAmount,
+                    isFreeCoffee = isFreeCoffee,
+                    isFreeUpSize = isFreeUpSize
+                )
+                current.copy(
+                    points = current.points - pointsRequired,
+                    vouchers = current.vouchers + newVoucher
+                )
             } else {
                 current
             }
         }
 
         return redeemed
+    }
+
+    fun useVoucher(voucherId: String): Boolean {
+        var used = false
+        _data.update { current ->
+            val found = current.vouchers.any { it.id == voucherId }
+            if (found) {
+                used = true
+                current.copy(
+                    vouchers = current.vouchers.filterNot { it.id == voucherId }
+                )
+            } else {
+                current
+            }
+        }
+        return used
     }
 
     fun useFreeCoffeeReward(): Boolean {

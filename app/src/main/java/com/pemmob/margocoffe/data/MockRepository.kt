@@ -241,6 +241,7 @@ object MockRepository {
             totalPrice = 35000,
             paymentMethod = "Lunas via QRIS",
             imageUrl = "",
+            imageRes = R.drawable.marko,
             coffeeIdToReorder = 1
         ),
         PastOrder(
@@ -251,6 +252,7 @@ object MockRepository {
             totalPrice = 40000,
             paymentMethod = "Lunas via Kasir",
             imageUrl = "",
+            imageRes = R.drawable.salted_caramel,
             coffeeIdToReorder = 2
         )
     )

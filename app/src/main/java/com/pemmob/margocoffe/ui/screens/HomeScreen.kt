@@ -59,12 +59,7 @@ import com.pemmob.margocoffe.viewmodel.RewardsViewModel
 import com.pemmob.margocoffe.viewmodel.UiState
 import kotlinx.coroutines.delay
 
-data class PromoItem(
-    val badge: String,
-    val title: String,
-    val subtitle: String,
-    val gradientColors: List<Color>
-)
+
 
 @Composable
 fun HomeScreen(
@@ -78,7 +73,8 @@ fun HomeScreen(
     onMenuClick: () -> Unit,
     onRewardsClick: () -> Unit,
     onOrdersClick: () -> Unit,
-    onCartClick: () -> Unit
+    onCartClick: () -> Unit,
+    onProfileClick: () -> Unit
 ) {
     val homeState by homeViewModel.uiState.collectAsState()
     val menuState by menuViewModel.uiState.collectAsState()
@@ -88,11 +84,10 @@ fun HomeScreen(
     val profileState by profileViewModel.uiState.collectAsState()
 
     var showNotifications by remember { mutableStateOf(false) }
-    var showProfileSettings by remember { mutableStateOf(false) }
 
     val selectedCategory = menuState.selectedCategory
 
-    val displayedCoffees = menuState.visibleDrinks
+    val displayedCoffees = menuState.bestSellerPerCategory
 
     Scaffold(
         bottomBar = {
@@ -206,9 +201,7 @@ fun HomeScreen(
                     onNotificationClick = {
                         showNotifications = true
                     },
-                    onProfileClick = {
-                        showProfileSettings = true
-                    },
+                    onProfileClick = onProfileClick,
                     onRewardsClick = onRewardsClick
                 )
             }
@@ -466,10 +459,20 @@ fun HomeScreen(
             onDismiss = {
                 showNotifications = false
             },
-            onMarkAsRead = { notificationId ->
-                notificationViewModel.onEvent(
-                    NotificationEvent.MarkAsRead(notificationId)
-                )
+            onNotificationClick = { notification ->
+                if (!notification.isRead) {
+                    notificationViewModel.onEvent(
+                        NotificationEvent.MarkAsRead(notification.id)
+                    )
+                }
+                showNotifications = false
+                when (notification.type) {
+                    NotificationType.REWARD,
+                    NotificationType.POINTS,
+                    NotificationType.MEMBERSHIP -> onRewardsClick()
+                    NotificationType.ORDER -> onOrdersClick()
+                    NotificationType.PROMO -> onMenuClick()
+                }
             },
             onMarkAllAsRead = {
                 notificationViewModel.onEvent(
@@ -482,160 +485,6 @@ fun HomeScreen(
                 )
             }
         )
-    }
-
-
-    if (showProfileSettings) {
-        ProfileSettingsSheet(
-            viewModel = profileViewModel,
-            onDismiss = {
-                showProfileSettings = false
-            }
-        )
-    }
-
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ProfileSettingsSheet(
-    viewModel: ProfileViewModel,
-    onDismiss: () -> Unit
-) {
-    val profileState by viewModel.uiState.collectAsState()
-
-    var name by remember(profileState.name) {
-        mutableStateOf(profileState.name)
-    }
-    var phone by remember(profileState.phone) {
-        mutableStateOf(profileState.phone)
-    }
-    var email by remember(profileState.email) {
-        mutableStateOf(profileState.email)
-    }
-    var imageUrl by remember(profileState.imageUrl) {
-        mutableStateOf(profileState.imageUrl)
-    }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = Color.White
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(
-                    androidx.compose.foundation.rememberScrollState()
-                )
-                .padding(
-                    start = 20.dp,
-                    end = 20.dp,
-                    bottom = 32.dp
-                )
-        ) {
-            Text(
-                text = "Pengaturan Profil",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Box(
-                modifier = Modifier
-                    .size(84.dp)
-                    .clip(CircleShape)
-                    .background(
-                        MaterialTheme.colorScheme.primaryContainer
-                    )
-                    .align(Alignment.CenterHorizontally),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = name
-                        .trim()
-                        .takeIf { it.isNotEmpty() }
-                        ?.first()
-                        ?.uppercase()
-                        ?: "M",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Nama") },
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Nomor Telepon") },
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Email") },
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = imageUrl,
-                onValueChange = { imageUrl = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("URL Foto Profil") },
-                placeholder = { Text("https://...") },
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Button(
-                onClick = {
-                    viewModel.onEvent(
-                        ProfileEvent.SaveProfile(
-                            name = name.trim(),
-                            phone = phone.trim(),
-                            email = email.trim(),
-                            imageUrl = imageUrl.trim()
-                        )
-                    )
-                    onDismiss()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = name.isNotBlank()
-            ) {
-                Text("Simpan Perubahan")
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Batal")
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-        }
     }
 }
 
@@ -650,199 +499,23 @@ private fun PromoAndGreetingSection(
     onProfileClick: () -> Unit,
     onRewardsClick: () -> Unit
 ) {
-    val promos = listOf(
-        PromoItem(
-            badge = "Edisi Khusus",
-            title = "Bingkisan Spesial & Menu Musim Dingin",
-            subtitle =
-                "Nikmati racikan istimewa barista Margo Space",
-
-            gradientColors = listOf(
-                Color(0xFF0F172A),
-                Color(0xFF1E3A8A),
-                Color(0xFF1E40AF)
-            )
-        ),
-
-        PromoItem(
-            badge = "Promo Baru",
-            title = "Nikmati Kopi Arabica Pilihan Terbaik",
-            subtitle =
-                "Biji kopi single origin pilihan dari nusantara",
-
-            gradientColors = listOf(
-                Color(0xFF172554),
-                Color(0xFF1E3A8A),
-                Color(0xFF2563EB)
-            )
-        ),
-
-        PromoItem(
-            badge = "Diskon 50%",
-            title = "Beli 1 Gratis 1 Khusus Hari Jumat",
-            subtitle =
-                "Klaim promo di seluruh cabang Margo Space",
-
-            gradientColors = listOf(
-                Color(0xFF0B192C),
-                Color(0xFF1E3E62),
-                Color(0xFF000000)
-            )
-        )
-    )
-
-    // ─── Infinite pager ───────────────────────────────────────────
-    val pageCount = Int.MAX_VALUE
-
-    val startIndex =
-        pageCount / 2 - (pageCount / 2 % promos.size)
-
-    val pagerState = rememberPagerState(
-        initialPage = startIndex,
-        pageCount = {
-            pageCount
-        }
-    )
-
-    // ─── Auto-scroll ──────────────────────────────────────────────
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(4000)
-
-            if (!pagerState.isScrollInProgress) {
-                pagerState.animateScrollToPage(
-                    pagerState.currentPage + 1
-                )
-            }
-        }
-    }
-
     Box(
         modifier = Modifier.fillMaxWidth()
     ) {
-
-        // ─── Top layer: Promo ─────────────────────────────────────
+        // ─── Top layer: Banner Margo Space (Static, No Slider) ─────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 60.dp)
-                .height(300.dp),
-
-            contentAlignment = Alignment.BottomStart
+                .height(300.dp)
+                .background(Color(0xFF004AAD))
         ) {
-
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize()
-            ) { page ->
-
-                val actualPage =
-                    page % promos.size
-
-                val promo =
-                    promos[actualPage]
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            brush =
-                                Brush.linearGradient(
-                                    colors =
-                                        promo.gradientColors
-                                )
-                        )
-                ) {
-
-                    // ─── Margo Space logo ─────────────────────────
-                    Image(
-                        painter =
-                            painterResource(
-                                id = R.drawable.logomargo
-                            ),
-
-                        contentDescription = null,
-
-                        modifier = Modifier
-                            .size(190.dp)
-                            .align(Alignment.CenterEnd)
-                            .padding(end = 8.dp)
-                            .graphicsLayer(
-                                alpha = 0.22f
-                            ),
-
-                        contentScale =
-                            ContentScale.Fit
-                    )
-
-                    // ─── Promotional Text ─────────────────────────
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(20.dp)
-                            .padding(bottom = 80.dp)
-                    ) {
-
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    Color.White.copy(
-                                        alpha = 0.2f
-                                    ),
-                                    RoundedCornerShape(16.dp)
-                                )
-                                .border(
-                                    1.dp,
-                                    Color.White.copy(
-                                        alpha = 0.3f
-                                    ),
-                                    RoundedCornerShape(16.dp)
-                                )
-                                .padding(
-                                    horizontal = 10.dp,
-                                    vertical = 4.dp
-                                )
-                        ) {
-                            Text(
-                                text = promo.badge,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
-
-                        Spacer(
-                            modifier =
-                                Modifier.height(8.dp)
-                        )
-
-                        Text(
-                            text = promo.title,
-                            style =
-                                MaterialTheme.typography
-                                    .headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-
-                        Spacer(
-                            modifier =
-                                Modifier.height(4.dp)
-                        )
-
-                        Text(
-                            text = promo.subtitle,
-                            style =
-                                MaterialTheme.typography
-                                    .bodySmall,
-                            color =
-                                Color.White.copy(
-                                    alpha = 0.85f
-                                )
-                        )
-                    }
-                }
-            }
+            Image(
+                painter = painterResource(id = R.drawable.banner_margo),
+                contentDescription = "Banner Margo Space",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
 
             // ─── Notification Icon ────────────────────────────────
             Box(
@@ -884,56 +557,6 @@ private fun PromoAndGreetingSection(
                                 color = Color.White,
                                 shape = CircleShape
                             )
-                    )
-                }
-            }
-
-            // ─── Pager Indicator ──────────────────────────────────
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 50.dp),
-
-                horizontalArrangement =
-                    Arrangement.Center,
-
-                verticalAlignment =
-                    Alignment.CenterVertically
-            ) {
-                val currentActualPage =
-                    pagerState.currentPage % promos.size
-
-                repeat(promos.size) { iteration ->
-
-                    val isActive =
-                        currentActualPage == iteration
-
-                    val indicatorColor =
-                        if (isActive) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            Color.White.copy(
-                                alpha = 0.6f
-                            )
-                        }
-
-                    val size =
-                        if (isActive) {
-                            10.dp
-                        } else {
-                            8.dp
-                        }
-
-                    Box(
-                        modifier = Modifier
-                            .padding(
-                                horizontal = 4.dp
-                            )
-                            .clip(CircleShape)
-                            .background(
-                                indicatorColor
-                            )
-                            .size(size)
                     )
                 }
             }
@@ -1175,7 +798,7 @@ private fun CategoryRow(
 private fun NotificationBottomSheet(
     notifications: List<AppNotification>,
     onDismiss: () -> Unit,
-    onMarkAsRead: (String) -> Unit,
+    onNotificationClick: (AppNotification) -> Unit,
     onMarkAllAsRead: () -> Unit,
     onClearAll: () -> Unit
 ) {
@@ -1248,9 +871,7 @@ private fun NotificationBottomSheet(
                         NotificationItem(
                             notification = notification,
                             onClick = {
-                                if (!notification.isRead) {
-                                    onMarkAsRead(notification.id)
-                                }
+                                onNotificationClick(notification)
                             }
                         )
                     }

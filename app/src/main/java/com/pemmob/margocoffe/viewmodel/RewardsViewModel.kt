@@ -9,11 +9,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class RewardsUiState(
-    val loyaltyPoints: Int = 5,
-    val stamps: Int = 5,
+    val loyaltyPoints: Int = 0,
+    val stamps: Int = 0,
     val freeCoffeeRewards: Int = 0,
+    val vouchers: List<RewardVoucher> = emptyList(),
     val membershipTier: MembershipTier = MembershipTier.BRONZE,
-    val lastRedeemedPoints: Int? = null
+    val lastRedeemedPoints: Int? = null,
+    val lastRedeemedMessage: String? = null
 ) {
     val stampsRemaining: Int
         get() = 10 - stamps
@@ -32,6 +34,7 @@ class RewardsViewModel : ViewModel() {
                         loyaltyPoints = rewards.points,
                         stamps = rewards.stamps,
                         freeCoffeeRewards = rewards.freeCoffeeRewards,
+                        vouchers = rewards.vouchers,
                         membershipTier = rewards.membershipTier
                     )
                 }
@@ -46,9 +49,20 @@ class RewardsViewModel : ViewModel() {
             }
 
             is RewardsEvent.RedeemReward -> {
-                if (RewardsStore.redeem(event.pointsRequired)) {
+                val success = RewardsStore.redeem(
+                    pointsRequired = event.pointsRequired,
+                    title = event.title,
+                    description = event.description,
+                    discountAmount = event.discountAmount,
+                    isFreeCoffee = event.isFreeCoffee,
+                    isFreeUpSize = event.isFreeUpSize
+                )
+                if (success) {
                     _uiState.update {
-                        it.copy(lastRedeemedPoints = event.pointsRequired)
+                        it.copy(
+                            lastRedeemedPoints = event.pointsRequired,
+                            lastRedeemedMessage = "Berhasil menukarkan ${event.title}! Siap digunakan di Checkout."
+                        )
                     }
                 }
             }
@@ -57,5 +71,9 @@ class RewardsViewModel : ViewModel() {
                 RewardsStore.useFreeCoffeeReward()
             }
         }
+    }
+
+    fun clearRedeemedMessage() {
+        _uiState.update { it.copy(lastRedeemedMessage = null) }
     }
 }

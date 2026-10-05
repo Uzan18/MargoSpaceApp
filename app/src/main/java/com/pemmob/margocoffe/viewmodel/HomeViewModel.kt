@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val promoBanners: UiState<List<PromoBanner>> = UiState.Loading,
-    val userName: String = "FAUZAN"
+    val userName: String = "Teman Margo"
 )
 
 class HomeViewModel : ViewModel() {
@@ -25,6 +25,17 @@ class HomeViewModel : ViewModel() {
 
     init {
         loadHomeData()
+        observeProfile()
+    }
+
+    private fun observeProfile() {
+        viewModelScope.launch {
+            ProfileStore.data.collect { profile ->
+                _uiState.update {
+                    it.copy(userName = profile.name)
+                }
+            }
+        }
     }
 
     fun onEvent(event: HomeEvent) {

@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.pemmob.margocoffe.R
 import com.pemmob.margocoffe.data.PastOrder
+import com.pemmob.margocoffe.data.MockRepository
 import com.pemmob.margocoffe.ui.components.formatRupiah
 import com.pemmob.margocoffe.viewmodel.OrderEvent
 import com.pemmob.margocoffe.viewmodel.OrderViewModel
@@ -315,32 +316,34 @@ fun OrderStatusScreen(
                                         .padding(vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    if (item.coffee.imageRes != 0) {
-                                        Image(
-                                            painter = painterResource(id = item.coffee.imageRes),
-                                            contentDescription = item.coffee.name,
-                                            modifier = Modifier
-                                                .size(46.dp)
-                                                .clip(RoundedCornerShape(8.dp)),
-                                            contentScale = ContentScale.Fit
-                                        )
-                                    } else if (item.coffee.imageUrl.isNotBlank()) {
-                                        AsyncImage(
-                                            model = item.coffee.imageUrl,
-                                            contentDescription = item.coffee.name,
-                                            modifier = Modifier
-                                                .size(46.dp)
-                                                .clip(RoundedCornerShape(8.dp)),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    } else {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(46.dp)
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(Color(0xFFF5EBE1)),
-                                            contentAlignment = Alignment.Center
-                                        ) {
+                                    val fallbackCoffee = MockRepository.getCoffeeById(item.coffee.id)
+                                        ?: MockRepository.coffeeMenu.find { it.name.equals(item.coffee.name, ignoreCase = true) }
+                                    val resolvedImageRes = if (item.coffee.imageRes != 0) item.coffee.imageRes else (fallbackCoffee?.imageRes ?: 0)
+                                    val resolvedImageUrl = if (item.coffee.imageUrl.isNotBlank()) item.coffee.imageUrl else (fallbackCoffee?.imageUrl ?: "")
+
+                                    Box(
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color(0xFFF8F9FA))
+                                            .border(0.5.dp, Color(0xFFE2E8F0), RoundedCornerShape(8.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (resolvedImageRes != 0) {
+                                            Image(
+                                                painter = painterResource(id = resolvedImageRes),
+                                                contentDescription = item.coffee.name,
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentScale = ContentScale.Fit
+                                            )
+                                        } else if (resolvedImageUrl.isNotBlank()) {
+                                            AsyncImage(
+                                                model = resolvedImageUrl,
+                                                contentDescription = item.coffee.name,
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentScale = ContentScale.Crop
+                                            )
+                                        } else {
                                             Image(
                                                 painter = painterResource(id = R.drawable.logomargo),
                                                 contentDescription = item.coffee.name,
@@ -437,7 +440,7 @@ fun OrderStatusScreen(
                                 }
 
                                 Button(
-                                    onClick = { showPickupDialog = true },
+                                    onClick = { viewModel.onEvent(OrderEvent.CompleteOrder) },
                                     modifier = Modifier
                                         .weight(1.2f)
                                         .height(44.dp),
@@ -447,13 +450,13 @@ fun OrderStatusScreen(
                                     )
                                 ) {
                                     Text(
-                                        text = "Ambil di Kasir",
+                                        text = "Selesai",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Icon(
-                                        imageVector = Icons.Default.ArrowForward,
+                                        imageVector = Icons.Default.CheckCircle,
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp)
                                     )
@@ -473,8 +476,21 @@ fun OrderStatusScreen(
                                 .padding(32.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(text = "☕", fontSize = 48.sp)
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(76.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.logomargo_foreground),
+                                    contentDescription = "Margo Space",
+                                    modifier = Modifier.size(56.dp),
+                                    contentScale = ContentScale.Fit
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
                             Text(
                                 text = "Tidak Ada Pesanan Aktif",
                                 style = MaterialTheme.typography.titleMedium,
@@ -569,54 +585,6 @@ fun OrderStatusScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ─── Loyalty Banner ──────────────────────────────────────
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onRewardsClick() },
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF))
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = null,
-                            tint = Color(0xFFFFD700),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Kumpulkan 5 Poin lagi untuk 1 Kopi Gratis!",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Cek Member Privilege →",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
-
             Spacer(modifier = Modifier.height(20.dp))
         }
     }
@@ -640,7 +608,7 @@ fun OrderStatusScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "☕ MARGO SPACE",
+                        text = "MARGO SPACE",
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 18.sp,
                         color = MaterialTheme.colorScheme.primary
@@ -697,6 +665,19 @@ fun OrderStatusScreen(
                         ) {
                             Text("${item.quantity}x ${item.coffee.name}", fontSize = 12.sp)
                             Text(formatRupiah(item.totalPrice), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
+
+                    if (orderState.discountAmount > 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Diskon Reward / Voucher", fontSize = 12.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.SemiBold)
+                            Text("-${formatRupiah(orderState.discountAmount)}", fontSize = 12.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -819,27 +800,38 @@ private fun PastOrderCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (pastOrder.imageUrl.isNotBlank()) {
-                    AsyncImage(
-                        model = pastOrder.imageUrl,
-                        contentDescription = pastOrder.orderNumber,
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(8.dp)),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFF5EBE1)),
-                        contentAlignment = Alignment.Center
-                    ) {
+                val fallbackCoffee = MockRepository.getCoffeeById(pastOrder.coffeeIdToReorder)
+                    ?: MockRepository.coffeeMenu.find { pastOrder.itemsSummary.contains(it.name, ignoreCase = true) }
+                val resolvedImageRes = if (pastOrder.imageRes != 0) pastOrder.imageRes else (fallbackCoffee?.imageRes ?: 0)
+                val resolvedImageUrl = if (pastOrder.imageUrl.isNotBlank()) pastOrder.imageUrl else (fallbackCoffee?.imageUrl ?: "")
+
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFF8F9FA))
+                        .border(0.5.dp, Color(0xFFE2E8F0), RoundedCornerShape(8.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (resolvedImageRes != 0) {
+                        Image(
+                            painter = painterResource(id = resolvedImageRes),
+                            contentDescription = pastOrder.orderNumber,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
+                        )
+                    } else if (resolvedImageUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = resolvedImageUrl,
+                            contentDescription = pastOrder.orderNumber,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
                         Image(
                             painter = painterResource(id = R.drawable.logomargo),
                             contentDescription = pastOrder.orderNumber,
-                            modifier = Modifier.size(30.dp),
+                            modifier = Modifier.size(32.dp),
                             contentScale = ContentScale.Fit
                         )
                     }

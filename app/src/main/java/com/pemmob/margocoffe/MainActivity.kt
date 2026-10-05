@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -17,6 +19,7 @@ import com.pemmob.margocoffe.ui.screens.DrinkDetailScreen
 import com.pemmob.margocoffe.ui.screens.HomeScreen
 import com.pemmob.margocoffe.ui.screens.MenuScreen
 import com.pemmob.margocoffe.ui.screens.OrderStatusScreen
+import com.pemmob.margocoffe.ui.screens.ProfileScreen
 import com.pemmob.margocoffe.ui.screens.RewardsScreen
 import com.pemmob.margocoffe.ui.theme.KopiRoyalTheme
 import com.pemmob.margocoffe.viewmodel.AuthViewModel
@@ -65,11 +68,16 @@ fun KopiRoyalApp() {
             AuthScreen(
                 authViewModel = authViewModel,
                 onAuthenticated = {
-                    navController.navigate(Screen.Home) {
-                        popUpTo<Screen.Auth> {
-                            inclusive = true
+                    val prev = navController.previousBackStackEntry
+                    if (prev != null) {
+                        navController.popBackStack()
+                    } else {
+                        navController.navigate(Screen.Home) {
+                            popUpTo<Screen.Auth> {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
                         }
-                        launchSingleTop = true
                     }
                 }
             )
@@ -98,6 +106,13 @@ fun KopiRoyalApp() {
                 },
                 onCartClick = {
                     navController.navigate(Screen.Checkout)
+                },
+                onProfileClick = {
+                    if (authViewModel.uiState.value.isAuthenticated) {
+                        navController.navigate(Screen.Profile)
+                    } else {
+                        navController.navigate(Screen.Auth)
+                    }
                 }
             )
         }
@@ -128,6 +143,7 @@ fun KopiRoyalApp() {
         composable<Screen.Rewards> {
             RewardsScreen(
                 viewModel = rewardsViewModel,
+                profileViewModel = profileViewModel,
                 onHomeClick = {
                     navController.navigate(Screen.Home) { launchSingleTop = true }
                 },
@@ -160,9 +176,16 @@ fun KopiRoyalApp() {
 
         // ─── Checkout Screen ────────────────────────────────────
         composable<Screen.Checkout> {
+            val authState by authViewModel.uiState.collectAsState()
+
             CheckoutScreen(
                 viewModel = checkoutViewModel,
                 orderViewModel = orderViewModel,
+                profileViewModel = profileViewModel,
+                isAuthenticated = authState.isAuthenticated,
+                onRequireLogin = {
+                    navController.navigate(Screen.Auth)
+                },
                 onBackClick = { navController.popBackStack() },
                 onProceedPayment = {
                     navController.navigate(Screen.OrderStatus) {
@@ -184,6 +207,20 @@ fun KopiRoyalApp() {
                 },
                 onRewardsClick = {
                     navController.navigate(Screen.Rewards) { launchSingleTop = true }
+                }
+            )
+        }
+
+        // ─── Profile Screen ─────────────────────────────────────
+        composable<Screen.Profile> {
+            ProfileScreen(
+                profileViewModel = profileViewModel,
+                authViewModel = authViewModel,
+                onBackClick = { navController.popBackStack() },
+                onLogout = {
+                    navController.navigate(Screen.Auth) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }
